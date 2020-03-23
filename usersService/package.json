@@ -1,0 +1,23 @@
+{
+  "name": "users_service",
+  "version": "0.0.1",
+  "main": "src/server.js",
+  "author": "ghanizadev",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon src/server.ts",
+    "test": "cross-env NODE_ENV=test nyc --report --reporter=lcov npx mocha"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.2",
+    "nodemon": "^2.0.2",
+    "nyc": "^15.0.0",
+    "supertest": "^4.0.2",
+    "ts-node": "^8.8.1",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "@types/amqplib": "^0.5.13",
+    "amqplib": "^0.5.5"
+  }
+}
