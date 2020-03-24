@@ -1,23 +1,30 @@
 'use strict'
 
 import * as amqp from 'amqplib';
-import conString from './config/rabbitmq'
+import conString from './config/rabbitmq';
+import Publisher from './Publisher';
+import Consumer from './Consumer';
 
-//Fake Data
-const payload = {
-  user: 'Jean',
-  email: 'jf.melo6@gmail.com',
-  password: '********',
-  active: true,
-}
+import * as Bluebird from 'bluebird';
+
+declare global { export interface Promise<T> extends Bluebird<T> {} }
+
+
 
 const run = async () => {
-    const connection = await amqp.connect(conString);
-    const channel = await connection.createConfirmChannel();
+  const connection = await amqp.connect(conString);
+  const pub = new Publisher();
+  await pub.connect(connection);
 
-    await channel.assertQueue('users');
-    channel.sendToQueue('users', Buffer.from(JSON.stringify(payload)))
-    console.log("Successfully connected!")
+  pub.send('posts', "Subject", "Test message")
+
+  const sub = new Consumer();
+  await sub.connect(connection);
+
+  sub.subscribe("Test", (msg, correlationId) => {
+    console.log(`[${Date.now()}] Replying to ${correlationId}...`)
+    pub.send('posts', 'Test', `We got your code (${msg.payload}) thanks!`);
+  })
 
 }
 
