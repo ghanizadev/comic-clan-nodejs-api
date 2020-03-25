@@ -1,0 +1,37 @@
+{
+  "name": "gateway",
+  "version": "0.0.1",
+  "main": "src/server.js",
+  "author": "ghanizadev",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon src/server.ts"
+  },
+  "dependencies": {
+    "amqplib": "^0.5.5",
+    "body-parser": "^1.19.0",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-graphql": "^0.9.0",
+    "graphql": "^14.6.0",
+    "mongoose": "^5.9.6",
+    "nodemailer": "^6.4.6",
+    "socket.io": "^2.3.0",
+    "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.5.13",
+    "@types/express": "^4.17.3",
+    "@types/morgan": "^1.9.0",
+    "cross-env": "^7.0.2",
+    "nodemon": "^2.0.2",
+    "nyc": "^15.0.0",
+    "sucrase": "^3.12.1",
+    "supertest": "^4.0.2",
+    "ts-node": "^8.8.1",
+    "typescript": "^3.8.3"
+  }
+}

@@ -15,11 +15,10 @@ const run = async () => {
   const connection = await amqp.connect(conString);
   const pub = new Publisher();
   await pub.connect(connection);
-
-  pub.send('users', "Subject", "Test message")
-
   const sub = new Consumer();
   await sub.connect(connection);
+
+  pub.send('users', "Test", "3888");
 
 }
 

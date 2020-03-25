@@ -3,33 +3,34 @@ import { v4 as uuid} from 'uuid';
 
 export default class Publisher {
     channel : amqp.Channel;
-    queue : string = 'users';
-    replyQueue : string = 'users_reply';
     connection: amqp.Connection;
+    name : string = 'users_service';
+
+    /**
+     * 
+     * @param name Set then name used to identify the origin of messages
+     * @default 'users_service'
+     */
+    setName(name : string) {
+        this.name = name;
+    }
 
     async connect (connection: amqp.Connection) {
         this.connection = connection;
-        let channel : amqp.Channel;
 
         return connection.createChannel()
             .then(ch => {
-                channel = ch;
-                return ch.assertQueue('posts');
-            })
-            .then(q => {
-                this.queue = q.queue
-                this.channel = channel;
-
+                this.channel = ch;
                 console.log("Successfully connected!");
-
             })
             .catch(e => { throw new Error(e) })
 
     }
 
     async send(queue: string, subject: string, payload : string) {
-        const { channel } = this;
+        const { channel, name } = this;
         const correlationId = uuid();
+
         const body = {
             payload,
         }
@@ -43,7 +44,7 @@ export default class Publisher {
             message,
             {
                 headers: {
-                    source: 'users_service',
+                    source: name,
                     subject
                 },
                 correlationId,
@@ -53,7 +54,7 @@ export default class Publisher {
     }
 
     async reply(queue: string, payload : string, correlationId: string, subject?: string, replyTo?: string) {
-        const { channel } = this;
+        const { channel, name } = this;
         const body = {
             payload,
         }
@@ -67,7 +68,7 @@ export default class Publisher {
         message,
         {
             headers: {
-                source: 'users_service',
+                source: name,
                 subject
             },
             correlationId,

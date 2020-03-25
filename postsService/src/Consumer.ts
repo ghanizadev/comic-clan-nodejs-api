@@ -25,18 +25,25 @@ export default class Consumer {
                 this.channel = ch;
                 await ch.assertQueue(queue);
 
-                await ch.consume(queue, function (msg) {
+                return ch.consume(queue, function (msg) {
                     try {    
                         if(msg.properties.headers.source !== 'posts_service'){
                             const content = JSON.parse(String(msg.content));
                             
                             console.log('[%s] - New incoming message from: %s', msg.properties.timestamp, msg.properties.headers.source)
+                            console.log('[%s] - Subject: "%s", Message: %s',
+                            msg.properties.timestamp,
+                            msg.properties.headers.subject,
+                            content
+                            )
                             subs.forEach(sub => {
                                 if(sub[1] === content.headers.subject)
                                     sub[2](content, msg.properties.correlationId);
                             });
                             messages.push(content);
                             ch.ack(msg);
+
+                            return;
                         }
                     } catch(e) {
                         console.log(e)
