@@ -7,12 +7,14 @@ const consoleFormat = printf((data) => {
 });
 
 const logger = winston.createLogger({
-    format: winston.format.json(),
-    defaultMeta: { service: 'proxy_server' },
-    transports: [
-        new winston.transports.File({ filename: 'error.log', level: 'error' }),
-        new winston.transports.File({ filename: 'events.log' })
-    ]
+	format: combine(
+		label({ label: 'proxy_server' }),
+        timestamp(),
+    ),
+	transports: [
+		new winston.transports.File({ filename: 'error.log', level: 'error' }),
+		new winston.transports.File({ filename: 'combined.log' }),
+	]
 });
 
 if (process.env.NODE_ENV !== 'production') {
