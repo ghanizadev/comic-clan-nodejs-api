@@ -1,0 +1,11 @@
+{
+  "name": "emailservice",
+  "version": "0.0.1",
+  "description": "",
+  "main": "src/server.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "ghanizadev",
+  "license": "MIT"
+}

@@ -15,10 +15,16 @@ const run = async () => {
   const connection = await amqp.connect(conString);
   const pub = new Publisher();
   await pub.connect(connection);
+
+  // pub.send("Test message")
+
   const sub = new Consumer();
   await sub.connect(connection);
 
-  pub.send('users', "Test", "3888");
+  sub.subscribe('Teste', async (msg, correlationId) => {
+    console.log("Callback called! ", msg.payload, correlationId)
+    // await pub.reply("Essa é uma resposta de posts", correlationId);
+  })
 
 }
 
