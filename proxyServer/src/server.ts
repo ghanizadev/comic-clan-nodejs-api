@@ -1,12 +1,12 @@
 'use strict'
 import express from 'express';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import bodyParser from 'body-parser';
-import path from 'path';
+import * as bodyParser from 'body-parser';
+import * as path from 'path';
 import compression from 'compression';
 import cors from 'cors';
-import http from 'http';
+import * as http from 'http';
 import io from 'socket.io';
 import routes from './routes';
 import mongoose from 'mongoose';
@@ -37,3 +37,5 @@ app.use(routes);
 server.listen(process.env.PORT ?? 3000, () => {
     logger.info(`Server started at port ${process.env.PORT ?? 3000}`)
 });
+
+export default server;
