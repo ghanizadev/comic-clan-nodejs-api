@@ -1,5 +1,6 @@
 import * as express from 'express';
 import * as amqp from 'amqplib';
+import aws from 'aws-sdk';
 
 const router = express.Router();
 
@@ -10,11 +11,16 @@ router.get('/', (req, res, next) => {
 
 // Get by ID
 router.get('/:userId', (req, res, next) => {
-    res.status(200).send({status: 200, message: 'Welcome to users!'})
+    return next({error: 'failed_to_fetch', error_description: 'couldnt fetch database', status: 500})
 })
 
 // Post a new user
 router.post('/', (req, res, next) => {
+    res.status(200).send({status: 200, message: 'Welcome to users!'})
+})
+
+// Post a new media for an user
+router.post('/:userId/images', (req, res, next) => {
     res.status(200).send({status: 200, message: 'Welcome to users!'})
 })
 

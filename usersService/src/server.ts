@@ -9,7 +9,7 @@ const run = async () => {
   const eventHandler = new EventHandler();
   eventHandler.listen(connectionOptions);
 
-  eventHandler.on('');
+  // eventHandler.on('');
 }
 
 run().catch(console.error);
