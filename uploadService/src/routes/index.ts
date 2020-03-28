@@ -24,7 +24,11 @@ router.post('/', upload.array('media'), async (req, res, next) => {
         return;
     }
 
-        if(Array.isArray(req.files)) req.files.forEach(async file => await publishFile(file))
+        if(Array.isArray(req.files)) {
+            await Promise.all(req.files.map(async file => {
+                await publishFile(file);
+            }))
+        }
 
         res.json(paths)
 
