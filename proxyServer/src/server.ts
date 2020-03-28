@@ -11,6 +11,7 @@ import io from 'socket.io';
 import routes from './routes';
 import mongoose from 'mongoose';
 import logger from './utils/logger';
+import multer from 'multer'
 
 import "sucrase/register/ts";
 dotenv.config();
@@ -20,7 +21,7 @@ const server = http.createServer(app);
 io(server);
 
 app.use(cors());
-app.use(express.json());
+app.use(multer().array('media'))
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());

@@ -1,6 +1,7 @@
 import * as express from 'express';
 import * as amqp from 'amqplib';
-import aws from 'aws-sdk';
+import axios from 'axios';
+import FormData from 'form-data';
 
 const router = express.Router();
 
@@ -20,8 +21,19 @@ router.post('/', (req, res, next) => {
 })
 
 // Post a new media for an user
-router.post('/:userId/images', (req, res, next) => {
-    res.status(200).send({status: 200, message: 'Welcome to users!'})
+router.post('/:userId/images', async (req, res, next) => {
+    const form = new FormData();
+
+    if(Array.isArray(req.files)){
+        req.files.forEach(file => {
+            form.append('media', file.buffer);
+        })
+    }
+    axios.post('http://localhost:3001/', form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
+    .then(response => {
+        res.status(response.status).send(response.data)
+    })
+    .catch(console.log)
 })
 
 // Alter a user

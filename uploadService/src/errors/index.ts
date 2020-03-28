@@ -1,32 +1,40 @@
 import logger from '../utils/logger';
 import express from 'express'
 
-interface Error {
+interface IError {
     error : string;
     error_description : string | string[];
     status: number,
 }
 
-export default (err : Error | any, req : express.Request, res : express.Response, next : express.NextFunction) => {
-    if(err.error && err.error_description && err.status){
-        const { error, error_description, status} = err;
-        logger.warn(`(${status}) ${error.toUpperCase()}: ${error_description}` )
+export class HTTPError extends Error {
+    public error : string = 'internal_server_error';
+    public error_description : string = 'something went bad, check logs for further information';
+    public status : number = 500;
+    private level : string = 'error';
 
-        return res
-        .status(status)
-        .send({
-            error,
-            error_description,
-            status,
-        });
+    constructor(error : string, error_description ?: string, status ?: number){
+        super(error);
+        this.error = error;
+        this.error_description = error_description;
+        this.status = status;
+        
+        if(status < 300) this.level = 'info';
+        else if(status < 500) this.level = 'warn';
+        else this.level = 'error'
+
+        logger.log(this.level,`(${status}) ERROR: "${error}", ERROR_DESCRIPTION: "${error_description}"`);
     }
+}
 
-    logger.warn(`(500) INTERNAL_ERROR: A request just failed`)
+export default (err : HTTPError, req : express.Request, res : express.Response, next : express.NextFunction) => {
+    const { error, error_description, status} = err;
 
     return res
-    .status(500)
+    .status(status)
     .send({
-        error: 'server_error',
-        error_description: "Internal Server Error. See logs for more information"
+        error,
+        error_description,
+        status,
     });
 }
