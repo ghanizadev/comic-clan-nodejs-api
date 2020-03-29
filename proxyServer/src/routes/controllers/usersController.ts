@@ -2,6 +2,7 @@ import * as express from 'express';
 import * as amqp from 'amqplib';
 import axios from 'axios';
 import FormData from 'form-data';
+import { HTTPError } from '../../errors';
 
 const router = express.Router();
 
@@ -24,16 +25,16 @@ router.post('/', (req, res, next) => {
 router.post('/:userId/images', async (req, res, next) => {
     const form = new FormData();
 
-    if(Array.isArray(req.files)){
+    if(Array.isArray(req.files)){;
         req.files.forEach(file => {
-            form.append('media', file.buffer);
+            form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
         })
     }
     axios.post('http://localhost:3001/', form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
     .then(response => {
         res.status(response.status).send(response.data)
     })
-    .catch(console.log)
+    .catch(e => { throw new HTTPError(e) })
 })
 
 // Alter a user

@@ -10,7 +10,6 @@ const upload = multer()
 
 router.post('/', upload.array('media'), async (req, res, next) => {
     try{
-    logger.info('Request received: ', req.ip)
     const s3 = new AwsS3('comicclanapi');
     const paths = []
 
