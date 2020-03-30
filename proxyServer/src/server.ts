@@ -36,7 +36,7 @@ mongoose.set('useUnifiedTopology', true);
 app.use(routes);
 
 server.listen(process.env.PORT ?? 3000, () => {
-    logger.info(`Server started at port ${process.env.PORT ?? 3000}`)
+    logger.info(`Server started at port ${process.env.PORT ?? 3000}`);
 });
 
 export default server;

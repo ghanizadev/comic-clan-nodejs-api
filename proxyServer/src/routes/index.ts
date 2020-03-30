@@ -4,9 +4,13 @@ import authController from './controllers/authController';
 import postsController from './controllers/postsController';
 import commentsController from './controllers/commentsController';
 import error from '../errors';
+import EventHandler, {injector} from '../events/eventHandler';
 
 const router = express.Router();
 
+const eventHandler = new EventHandler('redis://localhost:6379/', 'server');
+
+router.use(injector(eventHandler));
 router.use('/users', usersController);
 router.use('/posts', postsController);
 router.use('/auth', authController);

@@ -3,6 +3,7 @@ import * as amqp from 'amqplib';
 import axios from 'axios';
 import FormData from 'form-data';
 import { HTTPError } from '../../errors';
+import polish from '../../utils/polish';
 
 const router = express.Router();
 
@@ -18,7 +19,14 @@ router.get('/:userId', (req, res, next) => {
 
 // Post a new user
 router.post('/', (req, res, next) => {
-    res.status(200).send({status: 200, message: 'Welcome to users!'})
+    req.eventHandler.publish('users_ch', {
+        body: req.body,
+        event: 'create',
+    })
+    .then(reply => {
+        res.status(201).send(polish(reply));
+    })
+    .catch(next)
 })
 
 // Post a new media for an user

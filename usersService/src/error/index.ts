@@ -1,7 +1,4 @@
-import logger from '../utils/logger';
-import express from 'express';
-
-export class HTTPError extends Error {
+export default class HTTPError extends Error {
     public error : string = 'internal_server_error';
     // tslint:disable-next-line: variable-name
     public error_description : string = 'something went bad, check logs for further information';
@@ -19,19 +16,6 @@ export class HTTPError extends Error {
         else if(status < 500) this.level = 'warn';
         else this.level = 'error'
 
-        logger.log(this.level,`(${status}) ERROR: "${error}", ERROR_DESCRIPTION: "${error_description}"`);
+        console.log(this.level,`(${status}) ERROR: "${error}", ERROR_DESCRIPTION: "${error_description}"`);
     }
-}
-
-export default (err : HTTPError, req : express.Request, res : express.Response, next : express.NextFunction) => {
-    // const { error, error_description, status} = err;
-    console.log(err);
-
-    // return res
-    // .status(status)
-    // .send({
-    //     error,
-    //     error_description,
-    //     status,
-    // });
 }
