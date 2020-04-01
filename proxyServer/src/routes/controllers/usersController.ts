@@ -9,12 +9,27 @@ const router = express.Router();
 
 // Get all users
 router.get('/', (req, res, next) => {
-    res.status(200).send({status: 200, message: 'Welcome to users!'})
+    req.eventHandler.publish('users_ch', {
+        body: {},
+        event: 'list',
+    })
+    .then(reply => {
+        res.status(reply.status).send(polish(reply));
+    })
+    .catch(next)
 })
 
 // Get by ID
-router.get('/:userId', (req, res, next) => {
-    return next({error: 'failed_to_fetch', error_description: 'couldnt fetch database', status: 500})
+router.get('/:email', (req, res, next) => {
+    req.eventHandler.publish('users_ch', {
+        body: { email : req.params.email },
+        event: 'list',
+    })
+    .then(reply => {
+        res.status(reply.status).send(polish(reply));
+    })
+    .catch(next)
+    // return next({error: 'failed_to_fetch', error_description: 'couldnt fetch database', status: 500})
 })
 
 // Post a new user
@@ -24,7 +39,7 @@ router.post('/', (req, res, next) => {
         event: 'create',
     })
     .then(reply => {
-        res.status(201).send(polish(reply));
+        res.status(reply.status).send(polish(reply));
     })
     .catch(next)
 })
@@ -46,13 +61,27 @@ router.post('/:userId/images', async (req, res, next) => {
 })
 
 // Alter a user
-router.put('/:userId', (req, res, next) => {
-    res.status(200).send({status: 200, message: 'Welcome to users!'})
+router.put('/:email', (req, res, next) => {
+    req.eventHandler.publish('users_ch', {
+        body: {email : req.params.email, content: req.body},
+        event: 'modify',
+    })
+    .then(reply => {
+        res.status(reply.status).send(polish(reply));
+    })
+    .catch(next)
 })
 
 // Delete a user
-router.delete('/:userId', (req, res, next) => {
-    res.status(200).send({status: 200, message: 'Welcome to users!'})
+router.delete('/:email', (req, res, next) => {
+    req.eventHandler.publish('users_ch', {
+        body: {email : req.params.email},
+        event: 'delete',
+    })
+    .then(reply => {
+        res.status(reply.status).send(polish(reply));
+    })
+    .catch(next)
 })
 
 export default router;

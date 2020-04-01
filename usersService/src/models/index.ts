@@ -8,6 +8,9 @@ export interface IUser extends mongoose.Document {
     createdAt ?: string;
     updatedAt ?: string;
     active ?: boolean;
+    _id : string;
+    _v : number;
+    compareHash: (hash: string) => Promise<boolean>;
 }
 
 export default class Database {
@@ -29,6 +32,12 @@ export default class Database {
 
             (this as IUser).password = await bcrypt.hash((this as IUser).password, 8);
         });
+
+        UserSchema.methods = {
+            compareHash(hash: string) {
+                return bcrypt.compare(hash, this.password);
+            },
+        };
 
         this.UserModel = mongoose.model<IUser>('User', UserSchema);
     }

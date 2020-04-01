@@ -12,8 +12,8 @@ export class HTTPError extends Error {
     constructor(error : string, error_description ?: string, status ?: number){
         super(error);
         this.error = error;
-        this.error_description = error_description;
-        this.status = status;
+        if(error_description) this.error_description = error_description;
+        if(status) this.status = status;
 
         if(status < 300) this.level = 'info';
         else if(status < 500) this.level = 'warn';
@@ -23,15 +23,25 @@ export class HTTPError extends Error {
     }
 }
 
-export default (err : HTTPError, req : express.Request, res : express.Response, next : express.NextFunction) => {
-    // const { error, error_description, status} = err;
-    console.log(err);
+export default (err : HTTPError | any, req : express.Request, res : express.Response, next : express.NextFunction) => {
+    if(err.error && err.error_description && err.status){
+        const { error, error_description, status} = err;
 
-    // return res
-    // .status(status)
-    // .send({
-    //     error,
-    //     error_description,
-    //     status,
-    // });
+        return res
+        .status(status)
+        .send({
+            error,
+            error_description,
+            status,
+        });
+    } else {
+        return res
+        .status(500)
+        .send({
+            error: 'internal_error',
+            error_description: err.message,
+            status: 500,
+        });
+    }
+
 }

@@ -10,15 +10,21 @@ const run = async () => {
   eventHandler.listen('users_ch');
 
   eventHandler.on('list', async (e, reply) => {
-    const doc = await controller.create(e.body);
-    if (doc) reply({error: 'failed_to_create', error_description: "an error occured while saving in database", status: 500});
-    else reply({error: 'failed_to_create', error_description: "an error occured while saving in database", status: 500})
+    try {
+      const doc = await controller.list(e.body);
+      if (doc) reply({payload: doc, status: 200});
+      else reply({error: 'not_found', error_description: "user was not found in our database", status: 404});
+
+    }catch(e) {
+      if(e.error && e.error_description && e.status) reply(e)
+      else reply({error: 'failed_to_fetch', error_description: e.message, status: 500});
+    }
   });
 
   eventHandler.on('create', async (e, reply) => {
     try {
       const doc = await controller.create(e.body);
-      reply({payload: doc, condition: 'ok'});
+      reply({payload: doc, status: 201});
     }catch(e) {
       if(e.error && e.error_description && e.status) reply(e)
       else reply({error: 'failed_to_create', error_description: e.message, status: 500});
@@ -26,15 +32,25 @@ const run = async () => {
   });
 
   eventHandler.on('delete', async (e, reply) => {
-    const doc = await controller.create(e.body);
-    if (doc) reply({error: 'failed_to_create', error_description: "an error occured while saving in database", status: 500});
-    else reply({error: 'failed_to_create', error_description: "an error occured while saving in database", status: 500})
+    try {
+      const doc = await controller.delete(e.body);
+      if (doc) reply({ payload: doc, status: 201 });
+      else reply({error: 'not_found', error_description: "user was not found in our database", status: 404})
+    }catch(e) {
+      if(e.error && e.error_description && e.status) reply(e)
+      else reply({error: 'failed_to_delete', error_description: e.message, status: 500});
+    }
   });
 
   eventHandler.on('modify', async (e, reply) => {
-    const doc = await controller.create(e.body);
-    if (doc) reply({error: 'failed_to_create', error_description: "an error occured while saving in database", status: 500});
-    else reply({error: 'failed_to_create', error_description: "an error occured while saving in database", status: 500})
+    try {
+      const doc = await controller.modify(e.body);
+      if (doc) reply({ payload: doc, status: 200 });
+      else reply({error: 'not_found', error_description: "user was not found in our database", status: 404})
+    }catch(e) {
+      if(e.error && e.error_description && e.status) reply(e)
+      else reply({error: 'failed_to_update', error_description: e.message, status: 500});
+    }
   });
 }
 

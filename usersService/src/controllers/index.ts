@@ -1,4 +1,4 @@
-import Database, { IUser } from '../models';
+import Database from '../models';
 import HTTPError from '../error';
 
 var database = new Database('mongodb://localhost:27017', 'comicclan');
@@ -7,6 +7,7 @@ const User = database.getModel();
 database.connect();
 
 interface IUserReturn {
+    _v : number;
     _id : string;
     name : string;
     email : string;
@@ -19,9 +20,13 @@ interface IUserCreateOptions {
     email : string;
     password : string;
 }
+
+interface IUserDeleteOptions {
+    email : string;
+}
 interface IUserListOptions {
     query : {
-        id ?: string;
+        _id ?: string;
         name ?: string;
         email ?: string;
     };
@@ -29,8 +34,11 @@ interface IUserListOptions {
 }
 
 interface IUserModifyOptions {
-    name ?: string;
-    password ?: string;
+    email : string;
+    content : {
+        name ?: string;
+        password ?: string;
+    };
 }
 
 export default {
@@ -39,12 +47,13 @@ export default {
 
         return user.save()
         .then(async (doc) => {
-            const { _id, email, name, createdAt, updatedAt } = doc;
+            const { _id, _v, email, name, createdAt, updatedAt } = doc;
 
             return {
                 name,
                 email,
                 _id,
+                _v,
                 createdAt,
                 updatedAt
             };
@@ -53,70 +62,64 @@ export default {
             throw new HTTPError('failed_to_save', err.message, 400);
         })
     },
-    async list(body : IUserListOptions) : Promise<IUserReturn[] | null> {
-        try {
-            const users = await User.find(body.query).exec();
+    async list(body : IUserListOptions) : Promise<IUserReturn[]> {
+        let users = await User.find({ ... body.query, active : true}).exec();
+        users = users.map(user => {
+            const u = user.toObject();
+            
+            delete u['active'];
+            delete u['password'];
 
-            return (users as IUserReturn[]);
+            return u;
+        })
 
-        } catch (e) {
+        return (users as IUserReturn[]);
+    },
+
+    async modify(body : IUserModifyOptions) : Promise<IUserReturn> {
+        const queryUser = await User.findOneAndUpdate({ email: body.email, active: true }, body.content, {new : true}).exec();
+
+            
+        if(!queryUser) {
             throw new HTTPError(
-                'internal_error',
-                'something went bad, check logs for further information',
-                500
+                'not_found',
+                `user with email "${body.email}" is not registered or it is deleted`,
+                404
             );
         }
+            
+        const { _id, _v, email, name, createdAt, updatedAt } = queryUser;
+
+        return {
+            name,
+            email,
+            _id,
+            createdAt,
+            updatedAt,
+            _v
+        };
     },
 
-    async modify(userEmail : string, body : IUserModifyOptions) : Promise<IUserReturn | null> {
-        try {
-            const queryUser = await User.findOne({ email: userEmail }).exec();
+    async delete(body : IUserDeleteOptions) : Promise<IUserReturn | null> {
+        const queryUser = await User.findOneAndUpdate({ email: body.email, active : true }, {active : false}, {new : true}).exec();
 
-            queryUser.set(body);
-            const { _id, email, name, createdAt, updatedAt } = await queryUser.save();
-
-            if(!queryUser) {
-                // Handle error
-                return null
-            }
-
-            return {
-                name,
-                email,
-                _id,
-                createdAt,
-                updatedAt
-            };
-
-        } catch (e) {
-            // Handle error
-            return null;
+        if(!queryUser) {
+            throw new HTTPError(
+                'not_found',
+                `user with email "${body.email}" is not registered or it is deleted`,
+                404
+            );
         }
-    },
 
-    async delete(userEmail : string) : Promise<IUserReturn | null> {
-        try {
-            const queryUser = await User.findOne({ email: userEmail }).exec();
+        const { _id, _v, email, name, createdAt, updatedAt } = queryUser;
 
-            queryUser.set({ active : false });
-            const { _id, email, name, createdAt, updatedAt } = await queryUser.save();
-
-            if(!queryUser) {
-                // Handle error
-                return null
-            }
-
-            return {
-                name,
-                email,
-                _id,
-                createdAt,
-                updatedAt
-            };
-
-        } catch (e) {
-            // Handle error
-            return null;
-        }
+        return {
+            name,
+            email,
+            _id,
+            _v,
+            createdAt,
+            updatedAt
+        };
     }
 }

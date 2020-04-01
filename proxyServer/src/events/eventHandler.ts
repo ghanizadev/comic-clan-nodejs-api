@@ -21,7 +21,7 @@ export interface Message {
 export interface IResponseType {
     from ?: string;
     replyTo ?: string;
-    condition ?: 'ok' | 'error' | 'notfound';
+    status : number;
 }
 
 export interface Reply extends IResponseType {
@@ -31,7 +31,6 @@ export interface Reply extends IResponseType {
 export interface HTTPError extends IResponseType {
     error : string;
     error_description : string;
-    status : number;
 }
 
 export type ResponseType = Reply | HTTPError;
@@ -99,7 +98,9 @@ export default class EventHandler {
                     const message = JSON.parse(msg);
                     if(message.replyTo === id){
                         this.consumer.removeListener('message', listener);
-                        res(message as Reply);
+                        if(message.status >= 400)
+                            return rej(message as Reply)
+                        return res(message as Reply);
                     }
                 }
                 this.consumer.addListener('message', listener);
