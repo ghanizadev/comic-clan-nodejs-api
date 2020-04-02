@@ -18,11 +18,9 @@ export default class Database {
     private UserModel : mongoose.Model<IPost>;
     private connection : mongoose.Mongoose;
 
-    private createPostSchema() {
+    private createCommentSchema() {
         const UserSchema = new mongoose.Schema({
-            userId: { type: String , required: true },
-            description: { type: String , required: true },
-            body: { type: String , required: true },
+            postId: { type: String , required: true },
             media: { type: [String] , default: [] },
             comments: { type: [String] , default: [] }
         }, { timestamps: true, collection: 'posts' });
@@ -31,7 +29,7 @@ export default class Database {
     }
 
     constructor(connectionString : string, databaseName : string = 'comicclan') {
-        this.createPostSchema();
+        this.createCommentSchema();
         this.connectionString = connectionString + '/' + databaseName;
     }
 

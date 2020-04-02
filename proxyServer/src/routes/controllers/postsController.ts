@@ -15,14 +15,14 @@ router.get('/', (req, res, next) => {
     })
     .then(async posts => {
         const results = await Promise.all(posts.payload.map(
-            async post => {
+            async (post: { userId: any; user: any; }) => {
                 return await req.eventHandler.publish('users_ch', {
                     body: {query: {_id: post.userId}},
                     event: 'list',
                 })
                 .then(({ payload }) => {
-                    delete payload[0]['password'];
-                    delete payload[0]['active'];
+                    delete payload[0].password;
+                    delete payload[0].active;
 
                     post.user = payload[0];
                     return post;

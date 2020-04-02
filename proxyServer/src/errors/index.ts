@@ -15,8 +15,8 @@ export class HTTPError extends Error {
         if(error_description) this.error_description = error_description;
         if(status) this.status = status;
 
-        if(status < 300) this.level = 'info';
-        else if(status < 500) this.level = 'warn';
+        if(this.status < 300) this.level = 'info';
+        else if(this.status < 500) this.level = 'warn';
         else this.level = 'error'
 
         logger.log(this.level,`(${status}) ERROR: "${error}", ERROR_DESCRIPTION: "${error_description}"`);

@@ -1,6 +1,7 @@
 import * as redis from 'redis';
 import * as uuid from 'uuid';
 import { Request, NextFunction, Response } from 'express';
+import logger from '../utils/logger';
 
 declare global {
     namespace Express {
@@ -46,6 +47,7 @@ export default class EventHandler {
 
     constructor(connectionString : string, channel : string) {
         this.channel = channel;
+        logger.info(`Connecting to REDIS... [${connectionString}]`)
         this.consumer = redis.createClient(connectionString);
         this.publisher = redis.createClient(connectionString);
     }
@@ -79,7 +81,7 @@ export default class EventHandler {
     }
 
     public on(event : 'create' | 'modify' | 'delete' | 'list', callback : (message : Message, reply ?: (response : ResponseType) => void) => void) {
-        this.eventListeners.push([event, callback, null]);
+        this.eventListeners.push([event, callback, {payload: {}, status: 500}]);
     }
 
     public async publish(channel : string = this.channel, message : Message) : Promise<ResponseType> {
@@ -95,13 +97,13 @@ export default class EventHandler {
 
         return new Promise((res, rej) => {
             try{
-                const listener = (_, msg) => {
-                    const message = JSON.parse(msg);
-                    if(message.replyTo === id){
+                const listener = (_: any, msg: string) => {
+                    const mess = JSON.parse(msg);
+                    if(mess.replyTo === id){
                         this.consumer.removeListener('message', listener);
-                        if(message.status >= 400)
-                            return rej(message as Reply)
-                        return res(message as Reply);
+                        if(mess.status >= 400)
+                            return rej(mess as Reply)
+                        return res(mess as Reply);
                     }
                 }
                 this.consumer.addListener('message', listener);

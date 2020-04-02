@@ -22,8 +22,17 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '..' , 'public')));
+app.use('/v3/api-docs', express.static(path.join(__dirname, '..' , 'public', 'docs')));
 app.use(compression());
+
+app.get('/', (_, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public'))
+})
+
+app.get('/v3/api-docs', (_, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'docs', 'index.html'))
+})
 
 app.use(routes);
 
