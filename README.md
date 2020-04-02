@@ -32,8 +32,30 @@ This counts with the following features:
 - MongoDB;
 - Amazon AWS S3;
 - SonarQube;
-- ESLint;
+- TSLint;
 - ExpressJs;
 - Mocha/Chai;
-- RabbitMQ;
+- Redis;
 - Docker;
+
+## Comments
+
+*PROS*
+
+1. Remove load from posts service
+
+2. Does not mix capabilities, thought that comments is another service
+
+3. Well organized and coherent;
+
+*CONS*
+
+1. Need to write in Post's database anyways
+
+2. One more service to set up
+
+3. Memory increasing, not worthy (?)
+
+4. Query all comments in every post
+
+

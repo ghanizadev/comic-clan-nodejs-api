@@ -13,8 +13,23 @@ router.get('/', (req, res, next) => {
         body: {},
         event: 'list',
     })
-    .then(reply => {
-        res.status(reply.status).send(polish(reply));
+    .then(async posts => {
+        const results = await Promise.all(posts.payload.map(
+            async post => {
+                return await req.eventHandler.publish('users_ch', {
+                    body: {query: {_id: post.userId}},
+                    event: 'list',
+                })
+                .then(({ payload }) => {
+                    delete payload[0]['password'];
+                    delete payload[0]['active'];
+
+                    post.user = payload[0];
+                    return post;
+                })
+                .catch(next);
+        }))
+        res.status(posts.status).send(polish(results));
     })
     .catch(next);
 })

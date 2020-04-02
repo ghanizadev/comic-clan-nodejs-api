@@ -1,4 +1,13 @@
 {
+  "name": "comments_service",
+  "version": "0.0.1",
+  "main": "src/server.js",
+  "author": "ghanizadev",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon src/server.ts",
+    "test": "cross-env NODE_ENV=test nyc --report --reporter=lcov npx mocha"
+  },
   "devDependencies": {
     "cross-env": "^7.0.2",
     "nodemon": "^2.0.2",

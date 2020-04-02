@@ -16,25 +16,25 @@ router.post('/', upload.array('media'), async (req, res, next) => {
     await s3.getOrCreateBucket();
     await s3.setBucketPublic();
 
-    const publishFile = async (file) => {
+    const publishFile = async (file, id) => {
         const stream = streamifier.createReadStream(file.buffer);
-        const path = await s3.uploadFile(stream, file.originalname.split('.')[1]);
+        const path = await s3.uploadFile(stream, file.originalname.split('.')[1], id);
         paths.push(path);
 
         return;
     }
 
-        if(Array.isArray(req.files)) {
-            if(req.files.length === 0) throw new HTTPError('empty_form', 'no files were added to request form data', 400);
+    if(Array.isArray(req.files)) {
+        if(req.files.length === 0) throw new HTTPError('empty_form', 'no files were added to request form data', 400);
 
-            await Promise.all(req.files.map(async file => {
-                await publishFile(file);
-            }))
+        await Promise.all(req.files.map(async file => {
+            await publishFile(file, req.query.id);
+        }))
 
-            return res.json(paths)
-        }
+        return res.json(paths)
+    }
 
-        throw new HTTPError('failed_to_validate', `failed to verify files in request form, be asured it is tagged "media" in your form's field`, 400);
+    throw new HTTPError('failed_to_validate', `failed to verify files in request form, be asured it is tagged "media" in your form's field`, 400);
 
     } catch(e) {
         if(e instanceof HTTPError) next(e);

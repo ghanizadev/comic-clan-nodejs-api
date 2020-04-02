@@ -45,9 +45,9 @@ class AwsS3 {
         
     }
 
-    public async uploadFile(file : any, ext : string) : Promise<string> {
+    public async uploadFile(file : any, ext : string, id : string) : Promise<string> {
         const params = {
-            Key: `${crypto.randomBytes(8).toString('HEX')}.${ext}`,
+            Key: `${id}_${crypto.randomBytes(8).toString('HEX')}.${ext}`,
             Body: file,
             Bucket: this.BUCKET_NAME
         }
