@@ -9,7 +9,7 @@ import multer from 'multer';
 
 const router = express.Router();
 
-const eventHandler = new EventHandler('redis://'+process.env.REDIS_SERVER+':6379/', 'server');
+const eventHandler = new EventHandler(process.env.REDIS_SERVER ?? 'redis://localhost:6379/', 'server');
 
 const upload = multer().array('media');
 

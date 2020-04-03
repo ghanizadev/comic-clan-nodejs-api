@@ -1,16 +1,5 @@
-version: '3.4'
+version: '3'
 services:
-  proxy:
-    build: ./proxyServer
-    ports:
-      - "8080:8080"
-    networks:
-      - redis-net
-    environment:
-      - REDIS_SERVER=redis
-      - PORT=8080
-    depends_on: 
-      - redis
   redis:
     image: "redis:alpine"
     command: ["redis-server", "--appendonly", "yes"]
@@ -19,7 +8,33 @@ services:
       - redis-net
     volumes:
       - redis-data:/data
+  mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    hostname: mongo
+    expose: 
+      - 27017
+    networks: 
+      - mongo-net
+    volumes:
+      - mongo-data:/data/db
+  proxy:
+    build: ./proxyServer
+    ports:
+      - "8080:8080"
+    networks:
+      - redis-net
+    environment:
+      - REDIS_SERVER=redis://redis:6379/
+      - PORT=8080
+    depends_on: 
+      - redis
+
+volumes:
+  mongo-data:
+  redis-data:
 networks:
   redis-net:
-volumes:
-  redis-data:
+  mongo-net:

@@ -1,12 +1,14 @@
 import EventHandler from './events';
 import * as Bluebird from 'bluebird';
 import controller from './controllers';
-import { HTTPError } from './events';
+import dotenv from 'dotenv';
 
-declare global { export interface Promise<T> extends Bluebird<T> {} }
+dotenv.config();
+
+// declare global { export interface Promise<T> extends Bluebird<T> {} }
 
 const run = async () => {
-  const eventHandler = new EventHandler('redis://localhost:6379/', 'posts_ch');
+  const eventHandler = new EventHandler(process.env.REDIS_SERVER ?? '', 'posts_ch');
   eventHandler.listen('posts_ch');
 
   eventHandler.on('list', async (e, reply) => {
@@ -24,7 +26,10 @@ const run = async () => {
   eventHandler.on('create', async (e, reply) => {
     try {
       const doc = await controller.create(e.body);
-      reply({payload: doc, status: 201});
+      if(doc){
+        return reply({payload: doc, status: 201});
+      }
+      return reply({error: 'failed_to_create', error_description: "service returned a null state", status: 500});
     }catch(e) {
       if(e.error && e.error_description && e.status) reply(e)
       else reply({error: 'failed_to_create', error_description: e.message, status: 500});

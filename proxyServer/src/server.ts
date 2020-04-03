@@ -1,8 +1,8 @@
 'use strict'
 import app from './app';
 import logger from './utils/logger';
+import ping from 'ping';
 
 app.listen(process.env.PORT ?? 3000, () => {
     logger.info(`Server started at port ${process.env.PORT ?? 3000}`);
-    logger.info(`Redis service started: ${process.env.REDIS_SERVER}`);
 });

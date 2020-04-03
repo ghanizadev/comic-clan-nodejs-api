@@ -2,6 +2,7 @@ import * as redis from 'redis';
 import * as uuid from 'uuid';
 import { Request, NextFunction, Response } from 'express';
 import logger from '../utils/logger';
+import ping from 'ping';
 
 declare global {
     namespace Express {
@@ -38,8 +39,8 @@ export interface HTTPError extends IResponseType {
 export type ResponseType = Reply | HTTPError;
 
 export default class EventHandler {
-    private consumer : redis.RedisClient;
-    private publisher : redis.RedisClient;
+    private consumer!: redis.RedisClient;
+    private publisher!: redis.RedisClient;
     private channel : string;
     private isListening : boolean = false;
 
@@ -47,9 +48,30 @@ export default class EventHandler {
 
     constructor(connectionString : string, channel : string) {
         this.channel = channel;
-        logger.info(`Connecting to REDIS... [${connectionString}]`)
-        this.consumer = redis.createClient(connectionString);
-        this.publisher = redis.createClient(connectionString);
+        logger.info(`Trying to connect to REDIS... [${connectionString}]`);
+
+        let count = 0;
+
+        const t = setInterval(() => {
+            try {
+                this.consumer = redis.createClient(connectionString);
+                this.publisher = redis.createClient(connectionString);
+                console.log('Successfully connected to Redis!');
+                clearInterval(t);
+                return;
+            } catch(e){
+                if(count <= 30){
+                    console.log("[%d] Pinging...", count)
+                    count ++;
+                    return;
+                } else {
+                    clearInterval(t);
+                    console.log("Failed to connect to Redis..")
+                    process.exit(1);
+                }
+            }
+        }, 1000);
+
     }
 
     public async listen(channel ?: string){

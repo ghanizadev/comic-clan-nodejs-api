@@ -1,9 +1,8 @@
 import EventHandler from './events';
-import * as Bluebird from 'bluebird';
 import controller from './controllers';
-import { HTTPError } from './events';
+import * as dotenv from 'dotenv';
 
-declare global { export interface Promise<T> extends Bluebird<T> {} }
+dotenv.config();
 
 const run = async () => {
   const eventHandler = new EventHandler('redis://localhost:6379/', 'posts_ch');
@@ -24,7 +23,10 @@ const run = async () => {
   eventHandler.on('create', async (e, reply) => {
     try {
       const doc = await controller.create(e.body);
-      reply({payload: doc, status: 201});
+      if(doc)
+        reply({payload: doc, status: 201});
+      else
+        reply({error: 'failed_to_create', error_description: 'service returned an empty response', status: 500});
     }catch(e) {
       if(e.error && e.error_description && e.status) reply(e)
       else reply({error: 'failed_to_create', error_description: e.message, status: 500});
@@ -52,6 +54,29 @@ const run = async () => {
       else reply({error: 'failed_to_update', error_description: e.message, status: 500});
     }
   });
+
+  eventHandler.on("addcomment", async (e, reply) => {
+    try {
+      const doc = await controller.addComment(e.body);
+      if (doc) reply({ payload: doc, status: 200 });
+      else reply({error: 'not_found', error_description: "post was not found in our database", status: 404})
+    }catch(e) {
+      if(e.error && e.error_description && e.status) reply(e)
+      else reply({error: 'failed_to_comment', error_description: e.message, status: 500});
+    }
+  });
+
+  eventHandler.on('addmedia', async (e, reply) => {
+    try {
+      const doc = await controller.addMedia(e.body);
+      if (doc) reply({ payload: doc, status: 200 });
+      else reply({error: 'not_found', error_description: "post was not found in our database", status: 404})
+    }catch(e) {
+      if(e.error && e.error_description && e.status) reply(e)
+      else reply({error: 'failed_to_update_media', error_description: e.message, status: 500});
+    }
+  });
+
 }
 
 run().catch(console.error);

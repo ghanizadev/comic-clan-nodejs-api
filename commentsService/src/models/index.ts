@@ -1,4 +1,4 @@
-import * as mongoose from 'mongoose';
+import mongoose from 'mongoose';
 
 export interface IPost extends mongoose.Document {
     userId: string;
@@ -16,7 +16,6 @@ export default class Database {
 
     private connectionString : string;
     private UserModel : mongoose.Model<IPost>;
-    private connection : mongoose.Mongoose;
 
     private createCommentSchema() {
         const UserSchema = new mongoose.Schema({
@@ -25,17 +24,17 @@ export default class Database {
             comments: { type: [String] , default: [] }
         }, { timestamps: true, collection: 'posts' });
 
-        this.UserModel = mongoose.model<IPost>('Post', UserSchema);
+        return mongoose.model<IPost>('Post', UserSchema);
     }
 
     constructor(connectionString : string, databaseName : string = 'comicclan') {
-        this.createCommentSchema();
+        this.UserModel = this.createCommentSchema();
         this.connectionString = connectionString + '/' + databaseName;
     }
 
-    public async connect() : Promise<mongoose.Mongoose> {
+    public async connect() : Promise<mongoose.Mongoose | void> {
         try{
-            this.connection = await mongoose.connect(this.connectionString, {
+            return await mongoose.connect(this.connectionString, {
                 useCreateIndex: true,
                 useFindAndModify: false,
                 useNewUrlParser: true,
@@ -45,14 +44,9 @@ export default class Database {
             console.error(e); //Logger
         }
 
-        return this.connection;
     }
 
     public getModel() : mongoose.Model<IPost> {
         return this.UserModel;
-    }
-
-    public getInterface() : mongoose.Mongoose {
-        return this.connection;
     }
 }

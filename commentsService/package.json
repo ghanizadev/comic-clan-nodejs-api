@@ -6,6 +6,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "nodemon src/server.ts",
+    "build": "tsc",
+    "start": "node build/server.js",
     "test": "cross-env NODE_ENV=test nyc --report --reporter=lcov npx mocha"
   },
   "devDependencies": {
@@ -23,6 +25,7 @@
   "dependencies": {
     "@types/amqplib": "^0.5.13",
     "amqplib": "^0.5.5",
+    "dotenv": "^8.2.0",
     "mongoose": "^5.9.7",
     "redis": "^3.0.2"
   }

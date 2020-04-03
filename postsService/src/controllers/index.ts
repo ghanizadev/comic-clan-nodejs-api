@@ -44,6 +44,16 @@ interface IPostModifyOptions {
     };
 }
 
+interface IPostAddCommentOptions {
+    _id : string;
+    commentsId : string | string[];
+}
+
+interface IPostAddMediaOptions {
+    _id : string;
+    photosURL : string | string[];
+}
+
 export default {
     async create(body : IPostCreateOptions) : Promise<IPostReturn | null> {
         const user = new Post(body);
@@ -77,6 +87,90 @@ export default {
     async modify(modifiedPost : IPostModifyOptions) : Promise<IPostReturn> {
         const queryPost = await Post.findOneAndUpdate({ _id: modifiedPost._id }, modifiedPost.content, {new : true}).exec();
 
+            
+        if(!queryPost) {
+            throw new HTTPError(
+                'not_found',
+                `post with id=${modifiedPost._id} does not exist or it is deleted`,
+                404
+            );
+        }
+            
+        const { _id, _v, userId, comments, description, body, media, createdAt, updatedAt } = queryPost;
+
+
+        return {
+            _id,
+            userId,
+            description,
+            body,
+            media,
+            comments,
+            createdAt,
+            updatedAt,
+            _v,
+        }
+    },
+
+
+    async addComment(modifiedPost : IPostAddCommentOptions) : Promise<IPostReturn | void> {
+        const queryPost = await Post.findOne({ _id: modifiedPost._id }).exec();
+
+        if(!queryPost || !queryPost.comments) return;
+
+        if(Array.isArray(modifiedPost.commentsId)){
+            modifiedPost.commentsId = Array.prototype.concat(queryPost.comments, modifiedPost.commentsId);
+        }else {
+            queryPost.comments.push(modifiedPost.commentsId)
+        }
+
+        const result = await queryPost.save();
+
+        if(!result) {
+            throw new HTTPError(
+                'not_found',
+                `post with id=${modifiedPost._id} does not exist or it is deleted`,
+                404
+            );
+        }
+            
+        const { _id, _v, userId, comments, description, body, media, createdAt, updatedAt } = result;
+
+
+        return {
+            _id,
+            userId,
+            description,
+            body,
+            media,
+            comments,
+            createdAt,
+            updatedAt,
+            _v,
+        }
+    },
+
+    async addMedia(modifiedPost : IPostAddMediaOptions) : Promise<IPostReturn | void> {
+        const queryPost = await Post.findOne({ _id: modifiedPost._id }).exec();
+
+        if(!queryPost || !queryPost.media) return;
+
+        if(Array.isArray(modifiedPost.photosURL)){
+            modifiedPost.photosURL = Array.prototype.concat(queryPost.media, modifiedPost.photosURL);
+        }else {
+            queryPost.media.push(modifiedPost.photosURL)
+        }
+
+        const result = await queryPost.save();
+
+        if(!result) {
+            throw new HTTPError(
+                'not_found',
+                `post with id=${modifiedPost._id} does not exist or it is deleted`,
+                404
+            );
+        }
+            
             
         if(!queryPost) {
             throw new HTTPError(

@@ -1,5 +1,6 @@
 import * as redis from 'redis';
 import * as uuid from 'uuid';
+// import HTTPError from '../error';
 
 
 export interface Message {
@@ -30,13 +31,13 @@ export type ResponseType = Reply | HTTPError;
 export default class EventHandler {
     private consumer : redis.RedisClient;
     private publisher : redis.RedisClient;
-    private channel : string;
+    private channel!: string;
     private isListening : boolean = false;
 
     private eventListeners : [string, (message : Message, reply : (response : ResponseType) => void) => void, Reply][] = [];
 
     constructor(connectionString : string, channel ?: string) {
-        this.channel = channel;
+        if(channel) this.channel = channel;
         this.consumer = redis.createClient(connectionString);
         this.publisher = redis.createClient(connectionString);
     }
@@ -70,8 +71,8 @@ export default class EventHandler {
         })
     }
 
-    public on(event : 'create' | 'modify' | 'delete' | 'list', callback : (message : Message, reply ?: (response : ResponseType) => void) => void) {
-        this.eventListeners.push([event, callback, null]);
+    public on(event : 'create' | 'modify' | 'delete' | 'list', callback : (message : Message, reply : (response : ResponseType) => void) => void) {
+        this.eventListeners.push([event, callback, {payload: {}, status: 500}]);
     }
 
     public async publish(channel : string = this.channel, message : Message) : Promise<ResponseType> {
@@ -87,7 +88,7 @@ export default class EventHandler {
 
         return new Promise((res, rej) => {
             try{
-                const listener = (_, msg) => {
+                const listener = (_: any, msg: string) => {
                     const message = JSON.parse(msg);
                     if(message.replyTo === id){
                         this.consumer.removeListener('message', listener);
