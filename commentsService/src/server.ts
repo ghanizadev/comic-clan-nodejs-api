@@ -1,15 +1,12 @@
 import EventHandler from './events';
-import * as Bluebird from 'bluebird';
 import controller from './controllers';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// declare global { export interface Promise<T> extends Bluebird<T> {} }
-
 const run = async () => {
-  const eventHandler = new EventHandler(process.env.REDIS_SERVER ?? '', 'posts_ch');
-  eventHandler.listen('posts_ch');
+  const eventHandler = new EventHandler(process.env.REDIS_SERVER ?? '', 'comments_ch');
+  eventHandler.listen();
 
   eventHandler.on('list', async (e, reply) => {
     try {

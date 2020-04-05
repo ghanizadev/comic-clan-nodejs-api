@@ -35,10 +35,26 @@ export default class EventHandler {
 
     private eventListeners : [string, (message : Message, reply : (response : ResponseType) => void) => void, Reply][] = [];
 
-    constructor(connectionString : string, channel ?: string) {
+
+    private retry_strategy(options : any) : number | Error {
+        if (options.attempt > 30) {
+            console.log('Redis server is not responding...');
+            process.exit(1);
+        }
+        if (options.error && options.error.code === "ECONNREFUSED") {
+            console.log('Connection refused, trying again...[%s]', options.attempt)
+            return 1000;
+        }
+        return 1000;
+    }
+
+    constructor(connectionString : string, channel : string) {
+        const {retry_strategy} = this;
+
+        console.log('Connecting to Redis server...');
         this.channel = channel;
-        this.consumer = redis.createClient(connectionString);
-        this.publisher = redis.createClient(connectionString);
+        this.consumer = redis.createClient({retry_strategy, url: connectionString});
+        this.publisher = redis.createClient({retry_strategy, url: connectionString});
     }
 
     public async listen(channel ?: string){
@@ -70,8 +86,8 @@ export default class EventHandler {
         })
     }
 
-    public on(event : 'create' | 'modify' | 'delete' | 'list', callback : (message : Message, reply ?: (response : ResponseType) => void) => void) {
-        this.eventListeners.push([event, callback, null]);
+    public on(event : 'create' | 'modify' | 'delete' | 'list', callback : (message : Message, reply : (response : ResponseType) => void) => void) {
+        this.eventListeners.push([event, callback, {payload: {}, status: 500}]);
     }
 
     public async publish(channel : string = this.channel, message : Message) : Promise<ResponseType> {
@@ -87,7 +103,7 @@ export default class EventHandler {
 
         return new Promise((res, rej) => {
             try{
-                const listener = (_, msg) => {
+                const listener = (_: any, msg: string) => {
                     const message = JSON.parse(msg);
                     if(message.replyTo === id){
                         this.consumer.removeListener('message', listener);

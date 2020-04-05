@@ -2,8 +2,8 @@ import * as express from 'express';
 import * as amqp from 'amqplib';
 import axios from 'axios';
 import FormData from 'form-data';
-import { HTTPError } from '../../errors';
-import polish from '../../utils/polish';
+import { HTTPError } from '../errors';
+import polish from '../utils/polish';
 
 const router = express.Router();
 

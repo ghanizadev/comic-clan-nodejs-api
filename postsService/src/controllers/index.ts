@@ -1,4 +1,4 @@
-import Database from '../models';
+import Database from '../database';
 import HTTPError from '../error';
 
 var database = new Database('mongodb://localhost:27017', 'comicclan');
@@ -46,7 +46,7 @@ interface IPostModifyOptions {
 
 interface IPostAddCommentOptions {
     _id : string;
-    commentsId : string | string[];
+    commentId : string;
 }
 
 interface IPostAddMediaOptions {
@@ -118,13 +118,10 @@ export default {
 
         if(!queryPost || !queryPost.comments) return;
 
-        if(Array.isArray(modifiedPost.commentsId)){
-            modifiedPost.commentsId = Array.prototype.concat(queryPost.comments, modifiedPost.commentsId);
-        }else {
-            queryPost.comments.push(modifiedPost.commentsId)
-        }
+        queryPost.comments.push(modifiedPost.commentId);
 
         const result = await queryPost.save();
+        console.log(result)
 
         if(!result) {
             throw new HTTPError(

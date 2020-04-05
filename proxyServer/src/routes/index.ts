@@ -1,8 +1,8 @@
 import express from 'express';
-import usersController from './controllers/usersController';
-import authController from './controllers/authController';
-import postsController from './controllers/postsController';
-import commentsController from './controllers/commentsController';
+import usersController from '../controllers/usersController';
+import authController from '../controllers/authController';
+import postsController from '../controllers/postsController';
+import commentsController from '../controllers/commentsController';
 import error, { HTTPError } from '../errors';
 import EventHandler, {injector} from '../events/eventHandler';
 import multer from 'multer';

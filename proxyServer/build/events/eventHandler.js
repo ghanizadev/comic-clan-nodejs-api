@@ -42,23 +42,34 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 var redis = __importStar(require("redis"));
 var uuid = __importStar(require("uuid"));
-var logger_1 = __importDefault(require("../utils/logger"));
 ;
 var EventHandler = /** @class */ (function () {
     function EventHandler(connectionString, channel) {
         this.isListening = false;
         this.eventListeners = [];
+        var retry_strategy = this.retry_strategy;
         this.channel = channel;
-        logger_1.default.info("Connecting to REDIS... [" + connectionString + "]");
-        this.consumer = redis.createClient(connectionString);
-        this.publisher = redis.createClient(connectionString);
+        this.consumer = redis.createClient({ retry_strategy: retry_strategy, url: connectionString });
+        this.publisher = redis.createClient({ retry_strategy: retry_strategy, url: connectionString });
     }
+    EventHandler.prototype.retry_strategy = function (options) {
+        if (options.attempt > 10) {
+            console.log('Redis server is not responding...');
+            process.exit(1);
+        }
+        if (options.error && options.error.code === "ECONNREFUSED") {
+            console.log('Connection refused, trying again...[%s]', options.attempt);
+            return 1000;
+            // return new Error("The server refused the connection");
+        }
+        if (options.total_retry_time > 1000 * 60 * 60) {
+            return new Error("Retry time exhausted");
+        }
+        return 1000;
+    };
     EventHandler.prototype.listen = function (channel) {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;

@@ -46,31 +46,25 @@ export default class EventHandler {
 
     private eventListeners : [string, (message : Message, reply : (response : ResponseType) => void) => void, Reply][] = [];
 
+
+    private retry_strategy(options : any) : number | Error {
+        if (options.attempt > 30) {
+            console.log('Redis server is not responding...');
+            process.exit(1);
+        }
+        if (options.error && options.error.code === "ECONNREFUSED") {
+            console.log('Connection refused, trying again...[%s]', options.attempt)
+            return 1000;
+        }
+        return 1000;
+    }
+
     constructor(connectionString : string, channel : string) {
+        const { retry_strategy } = this;
+
         this.channel = channel;
-        logger.info(`Trying to connect to REDIS... [${connectionString}]`);
-
-        let count = 0;
-
-        const t = setInterval(() => {
-            try {
-                this.consumer = redis.createClient(connectionString);
-                this.publisher = redis.createClient(connectionString);
-                console.log('Successfully connected to Redis!');
-                clearInterval(t);
-                return;
-            } catch(e){
-                if(count <= 30){
-                    console.log("[%d] Pinging...", count)
-                    count ++;
-                    return;
-                } else {
-                    clearInterval(t);
-                    console.log("Failed to connect to Redis..")
-                    process.exit(1);
-                }
-            }
-        }, 1000);
+        this.consumer = redis.createClient({retry_strategy, url: connectionString});
+        this.publisher = redis.createClient({retry_strategy, url: connectionString});
 
     }
 

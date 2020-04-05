@@ -1,4 +1,4 @@
-import Database from '../models';
+import Database from '../database';
 import HTTPError from '../error';
 
 var database = new Database('mongodb://localhost:27017', 'comicclan');
@@ -11,8 +11,8 @@ interface IUserReturn {
     _id : string;
     name : string;
     email : string;
-    createdAt : string;
-    updatedAt: string;
+    createdAt : any;
+    updatedAt: any;
 }
 
 interface IUserCreateOptions {
@@ -42,7 +42,7 @@ interface IUserModifyOptions {
 }
 
 export default {
-    async create(body : IUserCreateOptions) : Promise<IUserReturn | null> {
+    async create(body : IUserCreateOptions) : Promise<IUserReturn | void> {
         const user = new User(body);
 
         return user.save()

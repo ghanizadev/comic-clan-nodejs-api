@@ -33,6 +33,7 @@ export default class EventHandler {
     private channel;
     private isListening;
     private eventListeners;
+    private retry_strategy;
     constructor(connectionString: string, channel: string);
     listen(channel?: string): Promise<void>;
     on(event: 'create' | 'modify' | 'delete' | 'list', callback: (message: Message, reply?: (response: ResponseType) => void) => void): void;

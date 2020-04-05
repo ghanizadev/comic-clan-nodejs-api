@@ -20,7 +20,7 @@ var errors_1 = __importDefault(require("../errors"));
 var eventHandler_1 = __importStar(require("../events/eventHandler"));
 var multer_1 = __importDefault(require("multer"));
 var router = express_1.default.Router();
-var eventHandler = new eventHandler_1.default((_a = process.env.REDIS_SERVER) !== null && _a !== void 0 ? _a : '', 'server');
+var eventHandler = new eventHandler_1.default((_a = process.env.REDIS_SERVER) !== null && _a !== void 0 ? _a : 'redis://localhost:6379/', 'server');
 var upload = multer_1.default().array('media');
 router.use('*', function (req, res, next) {
     upload(req, res, function (err) {

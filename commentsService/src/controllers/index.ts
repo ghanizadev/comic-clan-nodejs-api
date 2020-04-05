@@ -1,16 +1,14 @@
-import Database from '../models';
+import Database from '../database';
 import HTTPError from '../error';
 
-var database = new Database('mongodb://localhost:27017', 'comicclan');
-const Post = database.getModel();
+var database = new Database('mongodb://localhost:27017', 'comments');
+const Comment = database.getModel();
 
 database.connect();
 
-interface IPostReturn {
+export interface ICommentReturn {
     userId: string;
-    description : string;
     body : string;
-    comments ?: string[];
     media ?: string[];
     updatedAt ?: string;
     createdAt ?: string;
@@ -18,24 +16,24 @@ interface IPostReturn {
     _v : number;
 }
 
-interface IPostCreateOptions {
+export interface ICommentCreateOptions {
     userId: string;
     description : string;
     body : string;
     media ?: string[];
 }
 
-interface IPostDeleteOptions {
+export interface ICommentDeleteOptions {
     _id : string;
 }
-interface IPostListOptions {
+export interface ICommentListOptions {
     query : {
         _id ?: string;
     };
     pagination ?: any;
 }
 
-interface IPostModifyOptions {
+export interface ICommentModifyOptions {
     _id : string;
     content : {
         description : string;
@@ -45,8 +43,8 @@ interface IPostModifyOptions {
 }
 
 export default {
-    async create(body : IPostCreateOptions) : Promise<IPostReturn | null> {
-        const user = new Post(body);
+    async create(body : ICommentCreateOptions) : Promise<ICommentReturn | void> {
+        const user = new Comment(body);
 
         return user.save()
         .then(async (doc) => {
@@ -68,44 +66,42 @@ export default {
             throw new HTTPError('failed_to_save', err.message, 400);
         })
     },
-    async list(body : IPostListOptions) : Promise<IPostReturn[]> {
-        let users = await Post.find(body.query).exec();
+    async list(body : ICommentListOptions) : Promise<ICommentReturn[]> {
+        let users = await Comment.find(body.query).exec();
 
-        return (users as IPostReturn[]);
+        return (users as ICommentReturn[]);
     },
 
-    async modify(modifiedPost : IPostModifyOptions) : Promise<IPostReturn> {
-        const queryPost = await Post.findOneAndUpdate({ _id: modifiedPost._id }, modifiedPost.content, {new : true}).exec();
+    async modify(modifiedComment : ICommentModifyOptions) : Promise<ICommentReturn> {
+        const queryComment = await Comment.findOneAndUpdate({ _id: modifiedComment._id }, modifiedComment.content, {new : true}).exec();
 
             
-        if(!queryPost) {
+        if(!queryComment) {
             throw new HTTPError(
                 'not_found',
-                `post with id=${modifiedPost._id} does not exist or it is deleted`,
+                `post with id=${modifiedComment._id} does not exist or it is deleted`,
                 404
             );
         }
             
-        const { _id, _v, userId, comments, description, body, media, createdAt, updatedAt } = queryPost;
+        const { _id, _v, userId, body, media, createdAt, updatedAt } = queryComment;
 
 
         return {
             _id,
             userId,
-            description,
             body,
             media,
-            comments,
             createdAt,
             updatedAt,
             _v,
         }
     },
 
-    async delete(deleteOptions : IPostDeleteOptions) : Promise<IPostReturn | null> {
-        const queryPost = await Post.findOneAndDelete({ _id: deleteOptions._id }).exec();
+    async delete(deleteOptions : ICommentDeleteOptions) : Promise<ICommentReturn | void> {
+        const queryComment = await Comment.findOneAndDelete({ _id: deleteOptions._id }).exec();
 
-        if(!queryPost) {
+        if(!queryComment) {
             throw new HTTPError(
                 'not_found',
                 `post with id=${deleteOptions._id} does not exist or it is deleted`,
@@ -113,15 +109,13 @@ export default {
             );
         }
 
-        const { _id, _v, userId, comments, description, body, media, createdAt, updatedAt } = queryPost;
+        const { _id, _v, userId, body, media, createdAt, updatedAt } = queryComment;
 
         return {
             _id,
             userId,
-            description,
             body,
             media,
-            comments,
             createdAt,
             updatedAt,
             _v,

@@ -37,10 +37,26 @@ export default class EventHandler {
 
     private eventListeners : [string, (message : Message, reply : (response : ResponseType) => void) => void, Reply][] = [];
 
-    constructor(connectionString : string, channel ?: string) {
-        if(channel) this.channel = channel;
-        this.consumer = redis.createClient(connectionString);
-        this.publisher = redis.createClient(connectionString);
+
+    private retry_strategy(options : any) : number | Error {
+        if (options.attempt > 30) {
+            console.log('Redis server is not responding...');
+            process.exit(1);
+        }
+        if (options.error && options.error.code === "ECONNREFUSED") {
+            console.log('Connection refused, trying again...[%s]', options.attempt)
+            return 1000;
+        }
+        return 1000;
+    }
+
+    constructor(connectionString : string, channel : string) {
+        const {retry_strategy} = this;
+
+        console.log('Connecting to Redis server...');
+        this.channel = channel;
+        this.consumer = redis.createClient({retry_strategy, url: connectionString});
+        this.publisher = redis.createClient({retry_strategy, url: connectionString});
     }
 
     public async listen(channel ?: string){

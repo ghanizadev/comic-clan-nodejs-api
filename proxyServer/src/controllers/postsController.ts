@@ -1,9 +1,9 @@
 import express from 'express';
 import axios from 'axios';
-import { HTTPError } from '../../errors';
+import { HTTPError } from '../errors';
 import FormData from 'form-data';
-import logger from '../../utils/logger';
-import polish from '../../utils/polish'
+import logger from '../utils/logger';
+import polish from '../utils/polish'
 
 const router = express.Router();
 

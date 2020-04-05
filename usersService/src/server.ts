@@ -24,7 +24,10 @@ const run = async () => {
   eventHandler.on('create', async (e, reply) => {
     try {
       const doc = await controller.create(e.body);
-      reply({payload: doc, status: 201});
+      if(!doc)
+        reply({error: 'failed_to_create', error_description: 'service returned an empty response', status: 500})
+      else
+        reply({payload: doc, status: 201});
     }catch(e) {
       if(e.error && e.error_description && e.status) reply(e)
       else reply({error: 'failed_to_create', error_description: e.message, status: 500});
