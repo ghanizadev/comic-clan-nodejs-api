@@ -10,6 +10,7 @@ export interface IUser extends Document {
     active ?: boolean;
     _id : string;
     _v : number;
+    [key : string] : any;
     compareHash: (hash: string) => Promise<boolean>;
 }
 
@@ -23,7 +24,7 @@ const UserSchema = new Schema({
 UserSchema.pre('save', async function(next) {
     if (!this.isModified('password')) next();
 
-    (this as IUser).password = await bcrypt.hash((this as IUser).password, 8);
+    (this as IUser).password = await bcrypt.hash((this as IUser).password, process.env.PASSWORD_SALT || 8);
 });
 
 UserSchema.methods = {

@@ -1,19 +1,11 @@
 import Database from '../database';
+import {IUser} from '../models/usersSchema';
 import HTTPError from '../error';
 
 var database = new Database('mongodb://localhost:27017', 'comicclan');
 const User = database.getModel();
 
 database.connect();
-
-interface IUserReturn {
-    _v : number;
-    _id : string;
-    name : string;
-    email : string;
-    createdAt : any;
-    updatedAt: any;
-}
 
 interface IUserCreateOptions {
     name : string;
@@ -37,46 +29,42 @@ interface IUserModifyOptions {
     email : string;
     content : {
         name ?: string;
-        password ?: string;
     };
 }
 
 export default {
-    async create(body : IUserCreateOptions) : Promise<IUserReturn | void> {
-        const user = new User(body);
+    async create(body : IUserCreateOptions) : Promise<IUser | void> {
+        const findQuery = await User.findOne({email: body.email, active : false}).exec();
+        if(findQuery) {
+            findQuery.set({active: true, password: body.password});
 
-        return user.save()
-        .then(async (doc) => {
-            const { _id, _v, email, name, createdAt, updatedAt } = doc;
+            return findQuery.save()
+            .then(async (doc) => {
+                return doc;
+            })
+            .catch(err => {
+                throw new HTTPError('failed_to_save', err.message, 400);
+            })
+        } else {
+            const user = new User(body);
 
-            return {
-                name,
-                email,
-                _id,
-                _v,
-                createdAt,
-                updatedAt
-            };
-        })
-        .catch(err => {
-            throw new HTTPError('failed_to_save', err.message, 400);
-        })
+            return user.save()
+            .then(async (doc) => {
+                return doc;
+            })
+            .catch(err => {
+                throw new HTTPError('failed_to_save', err.message, 400);
+            })
+        }
+
     },
-    async list(body : IUserListOptions) : Promise<IUserReturn[]> {
+    async list(body : IUserListOptions) : Promise<IUser[]> {
         let users = await User.find({ ... body.query, active : true}).exec();
-        users = users.map(user => {
-            const u = user.toObject();
-            
-            delete u['active'];
-            delete u['password'];
 
-            return u;
-        })
-
-        return (users as IUserReturn[]);
+        return (users as IUser[]);
     },
 
-    async modify(body : IUserModifyOptions) : Promise<IUserReturn> {
+    async modify(body : IUserModifyOptions) : Promise<IUser> {
         const queryUser = await User.findOneAndUpdate({ email: body.email, active: true }, body.content, {new : true}).exec();
 
             
@@ -88,19 +76,10 @@ export default {
             );
         }
             
-        const { _id, _v, email, name, createdAt, updatedAt } = queryUser;
-
-        return {
-            name,
-            email,
-            _id,
-            createdAt,
-            updatedAt,
-            _v
-        };
+        return queryUser;
     },
 
-    async delete(body : IUserDeleteOptions) : Promise<IUserReturn | null> {
+    async delete(body : IUserDeleteOptions) : Promise<IUser | null> {
         const queryUser = await User.findOneAndUpdate({ email: body.email, active : true }, {active : false}, {new : true}).exec();
 
         if(!queryUser) {
@@ -110,16 +89,7 @@ export default {
                 404
             );
         }
-
-        const { _id, _v, email, name, createdAt, updatedAt } = queryUser;
-
-        return {
-            name,
-            email,
-            _id,
-            _v,
-            createdAt,
-            updatedAt
-        };
+        
+        return queryUser;
     }
 }

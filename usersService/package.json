@@ -24,6 +24,7 @@
     "@types/uuid": "^7.0.2",
     "amqplib": "^0.5.5",
     "bcrypt": "^4.0.1",
+    "dotenv": "^8.2.0",
     "mongoose": "^5.9.6",
     "redis": "^3.0.2",
     "uuid": "^7.0.2"

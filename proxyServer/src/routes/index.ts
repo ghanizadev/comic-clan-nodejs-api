@@ -1,9 +1,8 @@
 import express from 'express';
 import usersController from '../controllers/usersController';
-import authController from '../controllers/authController';
 import postsController from '../controllers/postsController';
 import commentsController from '../controllers/commentsController';
-import error, { HTTPError } from '../errors';
+import middlewares from '../middlewares';
 import EventHandler, {injector} from '../events/eventHandler';
 import multer from 'multer';
 
@@ -22,10 +21,9 @@ router.use('*', (req, res, next) => {
 router.use(injector(eventHandler));
 router.use('/users', usersController);
 router.use('/posts', postsController);
-router.use('/auth', authController);
 router.use('/comments', commentsController);
 
-router.use(error);
+router.use(middlewares.errorHandler);
 
 router.all('*', (req, res, next) => {
 	return res.status(404).send({error: 'not_found', error_description: "This endpoint was deleted, moved or it is currently unavailable"})

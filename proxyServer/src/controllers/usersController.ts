@@ -4,6 +4,8 @@ import axios from 'axios';
 import FormData from 'form-data';
 import { HTTPError } from '../errors';
 import polish from '../utils/polish';
+import IUserDTO from '../DTO/userDTO';
+import { IResponseType } from '../events/eventHandler';
 
 const router = express.Router();
 
@@ -14,7 +16,18 @@ router.get('/', (req, res, next) => {
         event: 'list',
     })
     .then(reply => {
-        res.status(reply.status).send(polish(reply));
+        const response : IUserDTO[] = [];
+        reply.payload.forEach((item : IResponseType) => {
+            const {_id, name, email, password, createdAt, updatedAt} = item;
+            response.push({
+                _id,
+                name,
+                email,
+                createdAt,
+                updatedAt
+            })
+        })
+        res.status(reply.status).send(response);
     })
     .catch(next)
 })
@@ -26,10 +39,19 @@ router.get('/:email', (req, res, next) => {
         event: 'list',
     })
     .then(reply => {
-        res.status(reply.status).send(polish(reply));
+        const {_id, name, email, password, createdAt, updatedAt} = reply.payload;
+
+        const response : IUserDTO = {
+            _id,
+            name,
+            email,
+            createdAt,
+            updatedAt
+        };
+
+        res.status(reply.status).send(response);
     })
     .catch(next)
-    // return next({error: 'failed_to_fetch', error_description: 'couldnt fetch database', status: 500})
 })
 
 // Post a new user
@@ -39,7 +61,25 @@ router.post('/', (req, res, next) => {
         event: 'create',
     })
     .then(reply => {
-        res.status(reply.status).send(polish(reply));
+        req.eventHandler.publish('auth_ch', {
+            body: {
+                email: reply.payload.email,
+                password: reply.payload.password,
+            },
+            event: 'newuser'
+        })
+
+        const {_id, name, email, password, createdAt, updatedAt} = reply.payload;
+
+        const response : IUserDTO = {
+            _id,
+            name,
+            email,
+            createdAt,
+            updatedAt
+        };
+
+        res.status(reply.status).send(response);
     })
     .catch(next)
 })
@@ -53,7 +93,7 @@ router.post('/:userId/images', async (req, res, next) => {
             form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
         })
     }
-    axios.post('http://localhost:3001/', form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
+    axios.post(process.env.UPLOAD_HOST || '', form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
     .then(response => {
         res.status(response.status).send(response.data)
     })
@@ -67,7 +107,17 @@ router.put('/:email', (req, res, next) => {
         event: 'modify',
     })
     .then(reply => {
-        res.status(reply.status).send(polish(reply));
+        const {_id, name, email, password, createdAt, updatedAt} = reply.payload;
+
+        const response : IUserDTO = {
+            _id,
+            name,
+            email,
+            createdAt,
+            updatedAt
+        };
+
+        res.status(reply.status).send(response);
     })
     .catch(next)
 })
@@ -79,7 +129,24 @@ router.delete('/:email', (req, res, next) => {
         event: 'delete',
     })
     .then(reply => {
-        res.status(reply.status).send(polish(reply));
+        req.eventHandler.publish('auth_ch', {
+            body: {
+                email: reply.payload.email,
+            },
+            event: 'removeuser'
+        })
+
+        const {_id, name, email, password, createdAt, updatedAt} = reply.payload;
+
+        const response : IUserDTO = {
+            _id,
+            name,
+            email,
+            createdAt,
+            updatedAt
+        };
+
+        res.status(reply.status).send(response);
     })
     .catch(next)
 })

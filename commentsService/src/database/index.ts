@@ -1,13 +1,13 @@
 import mongoose from 'mongoose';
-import commentsSchema, {IPost} from '../models/commentsSchema';
+import commentsSchema, {IComment} from '../models/commentsSchema';
 
 export default class Database {
 
     private connectionString : string;
-    private UserModel : mongoose.Model<IPost>;
+    private CommentModel : mongoose.Model<IComment>;
 
     constructor(connectionString : string, databaseName : string = 'comicclan') {
-        this.UserModel = commentsSchema;
+        this.CommentModel = commentsSchema;
         this.connectionString = connectionString + '/' + databaseName;
     }
 
@@ -38,7 +38,7 @@ export default class Database {
 
     }
 
-    public getModel() : mongoose.Model<IPost> {
-        return this.UserModel;
+    public getModel() : mongoose.Model<IComment> {
+        return this.CommentModel;
     }
 }

@@ -12,11 +12,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
-var usersController_1 = __importDefault(require("./controllers/usersController"));
-var authController_1 = __importDefault(require("./controllers/authController"));
-var postsController_1 = __importDefault(require("./controllers/postsController"));
-var commentsController_1 = __importDefault(require("./controllers/commentsController"));
-var errors_1 = __importDefault(require("../errors"));
+var usersController_1 = __importDefault(require("../controllers/usersController"));
+var postsController_1 = __importDefault(require("../controllers/postsController"));
+var commentsController_1 = __importDefault(require("../controllers/commentsController"));
+var middlewares_1 = __importDefault(require("../middlewares"));
 var eventHandler_1 = __importStar(require("../events/eventHandler"));
 var multer_1 = __importDefault(require("multer"));
 var router = express_1.default.Router();
@@ -32,9 +31,8 @@ router.use('*', function (req, res, next) {
 router.use(eventHandler_1.injector(eventHandler));
 router.use('/users', usersController_1.default);
 router.use('/posts', postsController_1.default);
-router.use('/auth', authController_1.default);
 router.use('/comments', commentsController_1.default);
-router.use(errors_1.default);
+router.use(middlewares_1.default.errorHandler);
 router.all('*', function (req, res, next) {
     return res.status(404).send({ error: 'not_found', error_description: "This endpoint was deleted, moved or it is currently unavailable" });
 });

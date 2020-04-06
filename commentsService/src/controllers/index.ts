@@ -48,15 +48,13 @@ export default {
 
         return user.save()
         .then(async (doc) => {
-            const { _id, _v, userId, description, comments, body, media, createdAt, updatedAt } = doc;
+            const { _id, _v, userId, body, media, createdAt, updatedAt } = doc;
 
             return {
                 _id,
                 userId,
-                description,
                 body,
                 media,
-                comments,
                 createdAt,
                 updatedAt,
                 _v,

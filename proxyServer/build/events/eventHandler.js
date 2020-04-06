@@ -56,17 +56,13 @@ var EventHandler = /** @class */ (function () {
         this.publisher = redis.createClient({ retry_strategy: retry_strategy, url: connectionString });
     }
     EventHandler.prototype.retry_strategy = function (options) {
-        if (options.attempt > 10) {
+        if (options.attempt > 30) {
             console.log('Redis server is not responding...');
             process.exit(1);
         }
         if (options.error && options.error.code === "ECONNREFUSED") {
             console.log('Connection refused, trying again...[%s]', options.attempt);
             return 1000;
-            // return new Error("The server refused the connection");
-        }
-        if (options.total_retry_time > 1000 * 60 * 60) {
-            return new Error("Retry time exhausted");
         }
         return 1000;
     };
@@ -124,6 +120,7 @@ var EventHandler = /** @class */ (function () {
                                     var listener_1 = function (_, msg) {
                                         var mess = JSON.parse(msg);
                                         if (mess.replyTo === id) {
+                                            console.log(mess);
                                             _this.consumer.removeListener('message', listener_1);
                                             if (mess.status >= 400)
                                                 return rej(mess);
@@ -145,6 +142,7 @@ var EventHandler = /** @class */ (function () {
     return EventHandler;
 }());
 exports.default = EventHandler;
+// TODO: Colocar em middlewares
 exports.injector = function (eventHandler) {
     return function (req, res, next) {
         Object.defineProperty(req, 'eventHandler', { value: eventHandler });

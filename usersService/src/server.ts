@@ -1,7 +1,9 @@
 import EventHandler from './events';
 import * as Bluebird from 'bluebird';
 import controller from './controllers';
-import { HTTPError } from './events';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 declare global { export interface Promise<T> extends Bluebird<T> {} }
 

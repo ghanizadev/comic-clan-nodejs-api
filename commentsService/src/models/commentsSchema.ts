@@ -1,7 +1,7 @@
 
 import * as mongoose from 'mongoose';
 
-export interface IPost extends mongoose.Document {
+export interface IComment extends mongoose.Document {
     userId: string;
     body : string;
     media ?: string[];
@@ -18,4 +18,4 @@ const UserSchema = new mongoose.Schema({
 }, { timestamps: true, collection: 'posts' });
 
 
-export default mongoose.model<IPost>('Post', UserSchema);
+export default mongoose.model<IComment>('Post', UserSchema);

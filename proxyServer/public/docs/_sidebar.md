@@ -10,7 +10,7 @@
 
 - Discover
 
-  - [Creating an user](create.md)
+  - [Creating an user](createuser.md)
   - [Authentication](auth.md)
   - [Sending a post](post.md)
   - [Sending a comment](comment.md)

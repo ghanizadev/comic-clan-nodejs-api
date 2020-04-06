@@ -133,6 +133,8 @@ export default class EventHandler {
     }
 }
 
+
+// TODO: Colocar em middlewares
 export const injector = (eventHandler : EventHandler) => {
     return (req : Request, res : Response, next : NextFunction) => {
         Object.defineProperty(req, 'eventHandler', {value: eventHandler });
