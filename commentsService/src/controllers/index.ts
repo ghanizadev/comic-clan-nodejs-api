@@ -1,10 +1,7 @@
 import Database from '../database';
-import HTTPError from '../error';
+import HTTPError from '../errors';
 
-var database = new Database('mongodb://localhost:27017', 'comments');
-const Comment = database.getModel();
-
-database.connect();
+const Comment = Database.getInstance().getModel();
 
 export interface ICommentReturn {
     userId: string;
@@ -65,9 +62,9 @@ export default {
         })
     },
     async list(body : ICommentListOptions) : Promise<ICommentReturn[]> {
-        let users = await Comment.find(body.query).exec();
+        let comments = await Comment.find(body.query).exec();
 
-        return (users as ICommentReturn[]);
+        return (comments as ICommentReturn[]);
     },
 
     async modify(modifiedComment : ICommentModifyOptions) : Promise<ICommentReturn> {

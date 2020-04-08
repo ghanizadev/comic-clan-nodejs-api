@@ -1,36 +1,8 @@
 import Database from '../database';
 import {IUser} from '../models/usersSchema';
-import HTTPError from '../error';
+import HTTPError from '../errors';
 
-var database = new Database('mongodb://localhost:27017', 'comicclan');
-const User = database.getModel();
-
-database.connect();
-
-interface IUserCreateOptions {
-    name : string;
-    email : string;
-    password : string;
-}
-
-interface IUserDeleteOptions {
-    email : string;
-}
-interface IUserListOptions {
-    query : {
-        _id ?: string;
-        name ?: string;
-        email ?: string;
-    };
-    pagination ?: any;
-}
-
-interface IUserModifyOptions {
-    email : string;
-    content : {
-        name ?: string;
-    };
-}
+const User = Database.getInstance().getModel();
 
 export default {
     async create(body : IUserCreateOptions) : Promise<IUser | void> {
@@ -89,7 +61,32 @@ export default {
                 404
             );
         }
-        
+
         return queryUser;
     }
+}
+
+export interface IUserCreateOptions {
+    name : string;
+    email : string;
+    password : string;
+}
+
+export interface IUserDeleteOptions {
+    email : string;
+}
+export interface IUserListOptions {
+    query : {
+        _id ?: string;
+        name ?: string;
+        email ?: string;
+    };
+    pagination ?: any;
+}
+
+export interface IUserModifyOptions {
+    email : string;
+    content : {
+        name ?: string;
+    };
 }

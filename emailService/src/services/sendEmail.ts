@@ -1,6 +1,8 @@
 import { createTransport, Transporter } from 'nodemailer';
 import ejs from 'ejs';
 import path from 'path';
+import dotenv from 'dotenv';
+dotenv.config();
 
 export enum Template {
     welcome,
@@ -34,25 +36,17 @@ export default class EmailHandler {
     private contact : string = '"ComicClan Team" <team@comicclan.com>'
 
     private init() {
-        const {EMAIL_PASS, EMAIL_PORT, EMAIL_USER, EMAIL_SMTP} = process.env;
+        const {EMAIL_PASS, EMAIL_USER, EMAIL_PORT, EMAIL_SMTP} = process.env;
 
-        const params ={
-            host: EMAIL_SMTP,
-            port: EMAIL_PORT,
-            secure: false, // true for 465, false for other ports
-            auth: {
-              user: EMAIL_USER, // generated ethereal user
-              pass: EMAIL_PASS // generated ethereal password
-            }
-        }
-
-        this.mailer = createTransport(params);
+        let poolConfig = `smtp://${EMAIL_USER}:${EMAIL_PASS}@${EMAIL_SMTP}:${EMAIL_PORT}/?pool=true`;
+        console.log(poolConfig)
+        return createTransport(poolConfig);
     }
     constructor(contactInfo ?:{ name : string, email : string}) {
         if(contactInfo) {
             this.contact = `"${contactInfo.name}" <${contactInfo.email}>`;
         }
-        this.init();
+        this.mailer = this.init();
     }
 
     public async sendMessageAlert(to : string, body : MessageAlertBody){
@@ -62,7 +56,7 @@ export default class EmailHandler {
 
         const email = {from, to, subject, html}
 
-        await this.mailer.sendMail(email);
+        await this.mailer.sendMail(email).then(()=> console.log('Message sent to %s', to));
     }
 
     public async sendWelcomeAlert(to : string, body : WelcomeAlertBody){
@@ -72,7 +66,7 @@ export default class EmailHandler {
 
         const email = {from, to, subject, html}
 
-        await this.mailer.sendMail(email);
+        await this.mailer.sendMail(email).then(()=> console.log('Message sent to %s', to));
     }
 
     public async sendResetAlert(to : string, body : ResetAlertBody){
@@ -82,7 +76,7 @@ export default class EmailHandler {
 
         const email = {from, to, subject, html}
 
-        await this.mailer.sendMail(email);
+        await this.mailer.sendMail(email).then(()=> console.log('Message sent to %s', to));
     }
 
 }

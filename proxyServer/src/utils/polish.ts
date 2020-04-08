@@ -6,6 +6,8 @@ export default (o: any) => {
         delete result.replyTo;
         delete result.from;
         delete result.active;
+        delete o.userId;
+        delete o.password;
 
         return result;
     }
@@ -14,6 +16,8 @@ export default (o: any) => {
     delete o.replyTo;
     delete o.from;
     delete o.active;
+    delete o.userId;
+    delete o.password;
 
     return o;
 }

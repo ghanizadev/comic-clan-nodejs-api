@@ -3,13 +3,10 @@ import usersController from '../controllers/usersController';
 import postsController from '../controllers/postsController';
 import commentsController from '../controllers/commentsController';
 import middlewares from '../middlewares';
-import EventHandler, {injector} from '../events/eventHandler';
+import EventHandler from '../events';
 import multer from 'multer';
 
 const router = express.Router();
-
-const eventHandler = new EventHandler(process.env.REDIS_SERVER ?? 'redis://localhost:6379/', 'server');
-
 const upload = multer().array('media');
 
 router.use('*', (req, res, next) => {
@@ -18,7 +15,7 @@ router.use('*', (req, res, next) => {
 		return next();
 	});
 })
-router.use(injector(eventHandler));
+
 router.use('/users', usersController);
 router.use('/posts', postsController);
 router.use('/comments', commentsController);

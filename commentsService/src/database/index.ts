@@ -1,23 +1,29 @@
-import mongoose from 'mongoose';
-import commentsSchema, {IComment} from '../models/commentsSchema';
+import mongoose, {Mongoose, Model} from 'mongoose';
+import usersSchema, {IComment} from '../models/commentsSchema';
+import { logger } from '../utils/logger';
 
 export default class Database {
+    private static instance : Database;
 
-    private connectionString : string;
-    private CommentModel : mongoose.Model<IComment>;
+    private constructor() {}
 
-    constructor(connectionString : string, databaseName : string = 'comicclan') {
-        this.CommentModel = commentsSchema;
-        this.connectionString = connectionString + '/' + databaseName;
+    public static getInstance() : Database {
+        if (!Database.instance) {
+            Database.instance = new Database();
+        }
+
+        return Database.instance;
     }
 
-    public async connect() : Promise<mongoose.Mongoose | void> {
+    public async connect(connectionString : string, databaseName : string = 'comicclan') : Promise<Mongoose | void> {
+        const conn = connectionString + '/' + databaseName;
+
         let count = 0;
 
-        console.log('Trying to connect to database...');
+        logger.info('Trying to connect to database...');
         const t = setInterval(async ()=> {
             try{
-                await mongoose.connect(this.connectionString, {
+                await mongoose.connect(conn, {
                     useCreateIndex: true,
                     useFindAndModify: false,
                     useNewUrlParser: true,
@@ -27,7 +33,7 @@ export default class Database {
                 return;
             } catch(e) {
                 if(count >= 30){
-                    console.error('Failed to connect to database!');
+                    console.error('Failed!');
                     clearInterval(t);
                     process.exit(1);
                 } else {
@@ -36,9 +42,11 @@ export default class Database {
             }
         }, 1000);
 
+        mongoose.connection.once('connected', () => logger.info('Database connected!'))
+
     }
 
     public getModel() : mongoose.Model<IComment> {
-        return this.CommentModel;
+        return usersSchema;
     }
 }

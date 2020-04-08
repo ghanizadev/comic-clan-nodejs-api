@@ -1,30 +1,28 @@
-interface IPostReturn {
+export interface ICommentReturn {
     userId: string;
-    description: string;
     body: string;
-    comments?: string[];
     media?: string[];
     updatedAt?: string;
     createdAt?: string;
     _id: string;
     _v: number;
 }
-interface IPostCreateOptions {
+export interface ICommentCreateOptions {
     userId: string;
     description: string;
     body: string;
     media?: string[];
 }
-interface IPostDeleteOptions {
+export interface ICommentDeleteOptions {
     _id: string;
 }
-interface IPostListOptions {
+export interface ICommentListOptions {
     query: {
         _id?: string;
     };
     pagination?: any;
 }
-interface IPostModifyOptions {
+export interface ICommentModifyOptions {
     _id: string;
     content: {
         description: string;
@@ -33,9 +31,9 @@ interface IPostModifyOptions {
     };
 }
 declare const _default: {
-    create(body: IPostCreateOptions): Promise<IPostReturn | null>;
-    list(body: IPostListOptions): Promise<IPostReturn[]>;
-    modify(modifiedPost: IPostModifyOptions): Promise<IPostReturn>;
-    delete(deleteOptions: IPostDeleteOptions): Promise<IPostReturn | null>;
+    create(body: ICommentCreateOptions): Promise<void | ICommentReturn>;
+    list(body: ICommentListOptions): Promise<ICommentReturn[]>;
+    modify(modifiedComment: ICommentModifyOptions): Promise<ICommentReturn>;
+    delete(deleteOptions: ICommentDeleteOptions): Promise<void | ICommentReturn>;
 };
 export default _default;

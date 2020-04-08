@@ -1,6 +1,15 @@
 import express, {Request, Response, NextFunction} from 'express';
 import { HTTPError } from '../errors';
 import jwt from 'jsonwebtoken';
+import EventHandler from '../events';
+
+declare global {
+    namespace Express {
+        interface Request {
+            eventHandler : EventHandler;
+        }
+    }
+}
 
 export default {
     errorHandler (err : HTTPError | any, req : express.Request, res : express.Response, next : express.NextFunction) {
@@ -26,5 +35,5 @@ export default {
 
     async authHandler(req : Request, res : Response, next : NextFunction) {
         return;
-    }
+    },
 }

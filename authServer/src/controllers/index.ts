@@ -29,7 +29,7 @@ eventHandler.on('removeuser', (message) => {
     db.del(message.body.email)
 })
 
-const issueNewToken = async (username: string, password: string) => {
+const issueNewToken = async (username: string, password: string, next : NextFunction) => {
     return await new Promise((res, rej) => {
         db.hget(username, 'password', (error, value) => {
             if(error) rej(error)
@@ -58,10 +58,10 @@ const issueNewToken = async (username: string, password: string) => {
         }else {
             throw new HTTPError('unauthorized_client', 'user does not exists, it had been deleted or username and password does not match', 401);
         }
-    }).catch(console.error);
+    }).catch(next);
 }
 
-const issueFromRefreshToken = async (token: string ) => {
+const issueFromRefreshToken = async (token: string, next : NextFunction ) => {
 
     const accessKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'access_token_private.pem')).toString();
     const refreshKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'refresh_token_private.pem')).toString();
@@ -95,10 +95,7 @@ const issueFromRefreshToken = async (token: string ) => {
         }else {
             throw new HTTPError('unauthorized_client', 'username and password does not match', 401);
         }
-    }).catch(e => {
-        console.log(e);
-        throw new HTTPError('invalid_grant', 'invalid refresh token');
-    });
+    }).catch(next);
 }
 
 export default {
@@ -131,10 +128,10 @@ export default {
             }
 
             if(req.body?.grant_type === 'refresh_token') {
-                const token = await issueFromRefreshToken(req.body.refresh_token);
+                const token = await issueFromRefreshToken(req.body.refresh_token, next);
                 res.status(201).send(token);
             } else if (req.body?.grant_type === 'password') {
-                const token = await issueNewToken(req.body.username, req.body.password);
+                const token = await issueNewToken(req.body.username, req.body.password, next);
                 res.status(201).send(token);
             } else if(['authorization_code', 'device_code', 'client_credentials'].includes(req.body?.grant_type)) {
                 throw new HTTPError('unsupported_grant_type', 'supproted grant types are: password; refresh_token');

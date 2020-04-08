@@ -1,12 +1,17 @@
 import EventHandler from './events';
 import controller from './controllers';
 import dotenv from 'dotenv';
+import Database from './database';
 
 dotenv.config();
 
 const run = async () => {
-  const eventHandler = new EventHandler(process.env.REDIS_SERVER ?? '', 'comments_ch');
-  eventHandler.listen();
+
+  const database = Database.getInstance()
+  database.connect(process.env.MONGO_SERVER || 'mongodb://localhost:27017', 'comments');
+
+  const eventHandler = EventHandler.getInstance();
+  eventHandler.connect(process.env.REDIS_SERVER ?? '', 'comments_ch');
 
   eventHandler.on('list', async (e, reply) => {
     try {

@@ -1,15 +1,20 @@
 import EventHandler from './events';
-import * as Bluebird from 'bluebird';
 import controller from './controllers';
 import dotenv from 'dotenv';
+import Database from './database';
+import Logger from './utils/logger';
 
 dotenv.config();
 
-declare global { export interface Promise<T> extends Bluebird<T> {} }
-
 const run = async () => {
-  const eventHandler = new EventHandler('redis://localhost:6379/', 'user_ch');
-  eventHandler.listen('users_ch');
+
+  const logger = Logger.getInstance().getLogger();
+
+  const eventHandler = EventHandler.getInstance();
+  eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'users_ch');
+
+  const db = Database.getInstance();
+  db.connect('mongodb://localhost:27017', 'users')
 
   eventHandler.on('list', async (e, reply) => {
     try {
@@ -30,6 +35,11 @@ const run = async () => {
         reply({error: 'failed_to_create', error_description: 'service returned an empty response', status: 500})
       else
         reply({payload: doc, status: 201});
+
+      eventHandler.publish('email_ch', {
+        body: doc,
+        event: 'newuser'
+      })
     }catch(e) {
       if(e.error && e.error_description && e.status) reply(e)
       else reply({error: 'failed_to_create', error_description: e.message, status: 500});

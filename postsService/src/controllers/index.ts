@@ -1,12 +1,9 @@
 import Database from '../database';
-import HTTPError from '../error';
+import HTTPError from '../errors';
 
-var database = new Database('mongodb://localhost:27017', 'comicclan');
-const Post = database.getModel();
+const Post = Database.getInstance().getModel();
 
-database.connect();
-
-interface IPostReturn {
+interface IPostDTO {
     userId: string;
     description : string;
     body : string;
@@ -55,10 +52,10 @@ interface IPostAddMediaOptions {
 }
 
 export default {
-    async create(body : IPostCreateOptions) : Promise<IPostReturn | null> {
-        const user = new Post(body);
+    async create(body : IPostCreateOptions) : Promise<IPostDTO | null> {
+        const post = new Post(body);
 
-        return user.save()
+        return post.save()
         .then(async (doc) => {
             const { _id, _v, userId, description, comments, body, media, createdAt, updatedAt } = doc;
 
@@ -78,13 +75,13 @@ export default {
             throw new HTTPError('failed_to_save', err.message, 400);
         })
     },
-    async list(body : IPostListOptions) : Promise<IPostReturn[]> {
-        let users = await Post.find(body.query).exec();
+    async list(body : IPostListOptions) : Promise<IPostDTO[]> {
+        let posts = await Post.find(body.query).exec();
 
-        return (users as IPostReturn[]);
+        return (posts as IPostDTO[]);
     },
 
-    async modify(modifiedPost : IPostModifyOptions) : Promise<IPostReturn> {
+    async modify(modifiedPost : IPostModifyOptions) : Promise<IPostDTO> {
         const queryPost = await Post.findOneAndUpdate({ _id: modifiedPost._id }, modifiedPost.content, {new : true}).exec();
 
             
@@ -113,7 +110,7 @@ export default {
     },
 
 
-    async addComment(modifiedPost : IPostAddCommentOptions) : Promise<IPostReturn | void> {
+    async addComment(modifiedPost : IPostAddCommentOptions) : Promise<IPostDTO | void> {
         const queryPost = await Post.findOne({ _id: modifiedPost._id }).exec();
 
         if(!queryPost || !queryPost.comments) return;
@@ -147,7 +144,7 @@ export default {
         }
     },
 
-    async addMedia(modifiedPost : IPostAddMediaOptions) : Promise<IPostReturn | void> {
+    async addMedia(modifiedPost : IPostAddMediaOptions) : Promise<IPostDTO | void> {
         const queryPost = await Post.findOne({ _id: modifiedPost._id }).exec();
 
         if(!queryPost || !queryPost.media) return;
@@ -193,7 +190,7 @@ export default {
         }
     },
 
-    async delete(deleteOptions : IPostDeleteOptions) : Promise<IPostReturn | null> {
+    async delete(deleteOptions : IPostDeleteOptions) : Promise<IPostDTO | null> {
         const queryPost = await Post.findOneAndDelete({ _id: deleteOptions._id }).exec();
 
         if(!queryPost) {

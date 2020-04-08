@@ -10,6 +10,8 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
+    "@types/bluebird": "^3.5.30",
+    "@types/bluebird-global": "^3.5.12",
     "cross-env": "^7.0.2",
     "nodemon": "^2.0.2",
     "nyc": "^15.0.0",
@@ -27,6 +29,8 @@
     "dotenv": "^8.2.0",
     "mongoose": "^5.9.6",
     "redis": "^3.0.2",
-    "uuid": "^7.0.2"
+    "uuid": "^7.0.2",
+    "valid-email": "^1.0.1",
+    "winston": "^3.2.1"
   }
 }

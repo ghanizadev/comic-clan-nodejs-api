@@ -42,14 +42,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var events_1 = __importDefault(require("./events"));
 var controllers_1 = __importDefault(require("./controllers"));
 var dotenv_1 = __importDefault(require("dotenv"));
+var database_1 = __importDefault(require("./database"));
 dotenv_1.default.config();
-// declare global { export interface Promise<T> extends Bluebird<T> {} }
 var run = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var eventHandler;
+    var database, eventHandler;
     var _a;
     return __generator(this, function (_b) {
-        eventHandler = new events_1.default((_a = process.env.REDIS_SERVER) !== null && _a !== void 0 ? _a : '', 'posts_ch');
-        eventHandler.listen('posts_ch');
+        database = database_1.default.getInstance();
+        database.connect(process.env.MONGO_SERVER || 'mongodb://localhost:27017', 'comments');
+        eventHandler = events_1.default.getInstance();
+        eventHandler.connect((_a = process.env.REDIS_SERVER) !== null && _a !== void 0 ? _a : '', 'comments_ch');
         eventHandler.on('list', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
             var doc, e_1;
             return __generator(this, function (_a) {

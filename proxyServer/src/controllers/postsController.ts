@@ -14,22 +14,44 @@ router.get('/', (req, res, next) => {
         event: 'list',
     })
     .then(async posts => {
-        const results = await Promise.all(posts.payload.map(
-            async (post: { userId: any; user: any; }) => {
-                return await req.eventHandler.publish('users_ch', {
+
+        const results = await Promise.all(
+
+            posts.payload.map(async(post: { userId: string; user: any; comments : string[]; }) => {
+
+                await req.eventHandler.publish('users_ch', {
                     body: {query: {_id: post.userId}},
                     event: 'list',
                 })
                 .then(({ payload }) => {
-                    delete payload[0].password;
-                    delete payload[0].active;
+                    if(payload.length === 0) return;
 
-                    post.user = payload[0];
-                    return post;
+                    post.user = polish(payload.shift());
                 })
                 .catch(next);
-        }))
-        res.status(posts.status).send(polish(results));
+
+                await req.eventHandler.publish('comments_ch', {
+                    body: {query: {_id: {$in : post.comments } }},
+                    event: 'list',
+                })
+                .then(({ payload }) => {
+                    if(payload.length === 0) return;
+
+                    post.comments = payload;
+                })
+                .catch(next);
+
+                return post;
+            })
+        );
+
+        const r : any[] = [];
+
+        results.forEach(e => {
+            if(e) r.push(polish(e));
+        });
+
+        res.status(posts.status).send(r);
     })
     .catch(next);
 })
@@ -48,57 +70,26 @@ router.get('/:id', (req, res, next) => {
 
 // Create a new post
 router.post('/', (req, res, next) => {
-    const form = new FormData();
-
-    if(Array.isArray(req.files)){;
-        req.files.forEach(file => {
-            form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
-        })
-    }
-    axios.post('http://localhost:3001/?id' + req.params.id, form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
-    .then(response => {
-        req.eventHandler.publish('users_ch', {
-            body: {query: {_id: req.body.userId}},
-            event: 'list',
-        })
-        .then(() => {
-            req.body.media = response.data;
-            req.eventHandler.publish('posts_ch', {
-                body: req.body,
-                event: 'create',
-            })
-            .then(reply => {
-                res.status(reply.status).send(polish(reply));
-            })
-            .catch(next);
-        })
-        .catch(next);
+    req.eventHandler.publish('posts_ch', {
+        body: req.body,
+        event: 'create',
+    })
+    .then(reply => {
+        res.status(reply.status).send(polish(reply));
     })
     .catch(next);
 })
 
 // Alter a post
 router.put('/:id', (req, res, next) => {
-    const form = new FormData();
-
-    if(Array.isArray(req.files)){;
-        req.files.forEach(file => {
-            form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
-        })
-    }
-    axios.post('http://localhost:3001/?id' + req.params.id, form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
-    .then(response => {
-        req.body.media = response.data;
-        req.eventHandler.publish('posts_ch', {
-            body: {_id : req.params.id, content: req.body},
-            event: 'modify',
-        })
-        .then(reply => {
-            res.status(reply.status).send(polish(reply));
-        })
-        .catch(next)
+    req.eventHandler.publish('posts_ch', {
+        body: {_id : req.params.id, content: req.body},
+        event: 'modify',
     })
-    .catch(next);
+    .then(reply => {
+        res.status(reply.status).send(polish(reply));
+    })
+    .catch(next)
 })
 
 // Delete a post

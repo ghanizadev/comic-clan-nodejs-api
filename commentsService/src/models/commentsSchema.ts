@@ -1,7 +1,7 @@
 
-import * as mongoose from 'mongoose';
+import mongoose, {Document, Schema} from 'mongoose';
 
-export interface IComment extends mongoose.Document {
+export interface IComment extends Document {
     userId: string;
     body : string;
     media ?: string[];
@@ -11,7 +11,7 @@ export interface IComment extends mongoose.Document {
     _v : number;
 }
 
-const UserSchema = new mongoose.Schema({
+const UserSchema = new Schema({
     userId: { type: String , required: true },
     body: { type: String , required: true },
     media: { type: [String] , default: [] },

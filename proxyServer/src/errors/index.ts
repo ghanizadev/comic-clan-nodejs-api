@@ -1,5 +1,4 @@
-import logger from '../utils/logger';
-import express from 'express';
+import { logger } from '../utils/logger';
 
 export class HTTPError extends Error {
     public error : string = 'internal_server_error';

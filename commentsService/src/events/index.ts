@@ -1,143 +1,119 @@
 import * as redis from 'redis';
 import * as uuid from 'uuid';
-import * as redisMock from'redis-mock';
-
-
-export interface Message {
-    id ?: string;
-    event : string;
-    from ?: string;
-    body : any;
-    replyTo ?: string;
-}
-
-interface IResponseType {
-    from ?: string;
-    replyTo ?: string;
-    status : number;
-}
-
-export interface Reply extends IResponseType {
-    payload : object;
-};
-
-export interface HTTPError extends IResponseType {
-    error : string;
-    error_description : string;
-}
-
-export type ResponseType = Reply | HTTPError;
+import { logger } from '../utils/logger';
+import { Message } from './Message';
+import { Reply } from './Reply';
+import { HTTPError } from '../errors/HTTPError';
 
 export default class EventHandler {
+    private static instance : EventHandler;
     private consumer !: redis.RedisClient;
     private publisher !: redis.RedisClient;
-    private channel : string;
-    private isListening : boolean = false;
-    private connectionString : string;
+    private channel !: string;
 
-    private eventListeners : [string, (message : Message, reply : (response : ResponseType) => void) => void, Reply][] = [];
-
-    constructor(connectionString : string, channel : string) {
-        this.channel = channel;
-        this.connectionString = connectionString;
-    }
+    private eventListeners : [string, (message : Message, reply : (response : Reply | HTTPError) => void) => void, Reply][] = [];
 
     private retry_strategy(options : any) : number | Error {
         if (options.attempt > 30) {
-            console.log('Redis server is not responding...');
+            logger.warn('Redis server is not responding...');
             process.exit(1);
         }
         if (options.error && options.error.code === "ECONNREFUSED") {
-            console.log('Connection refused, trying again...[%s]', options.attempt)
             return 1000;
-            // return new Error("The server refused the connection");
-        }
-        if (options.total_retry_time > 1000 * 60 * 60) {
-            return new Error("Retry time exhausted");
         }
         return 1000;
     }
 
-    private async connect() : Promise<void> {
-        const {retry_strategy} = this;
-        this.consumer = redis.createClient({ retry_strategy, url: this.connectionString });
-        this.publisher = redis.createClient({ retry_strategy, url: this.connectionString });
+    private constructor() {}
+
+    public static getInstance() {
+        if(!EventHandler.instance){
+            EventHandler.instance = new this();
+        }
+        return EventHandler.instance;
     }
 
-    public async listen(channel ?: string){
-        try{
-            await this.connect()
-                .catch(e => {
-                    console.error(e);
-                    process.exit(1);
-                })
+    public async connect(connectionString : string, channel : string){
+        const {retry_strategy} = this;
 
-            if(channel) this.channel = channel;
+        logger.info('Connecting to Redis server...');
+        this.channel = channel;
+        this.consumer = redis.createClient({retry_strategy, url: connectionString});
+        this.publisher = redis.createClient({retry_strategy, url: connectionString});
+
+        this.consumer.once('ready', () => {
+            logger.info('Consumer connected!');
+
+            logger.info(`Subscribing to channel "${this.channel}"...`)
             this.consumer.subscribe(this.channel);
-            console.log('Selecting channel "%s"...', this.channel)
-            this.consumer.on('error', (e) => {
-                console.log(e)
-            })
+
+            this.consumer.on('subscribe', (ch) => logger.info(`Consumer subscribed to "${ch}"`));
 
             this.consumer.on('message', (ch, msg) => {
                 const decoded = JSON.parse(msg);
-                console.log('Message received from "%s"', decoded.from)
+
+                logger.info(`Message received from "${decoded.from}"`)
 
                 this.eventListeners.forEach(event => {
                     if(decoded.event === event[0]){
+
                         event[2] = decoded;
-                        
-                        event[1](decoded, (response : ResponseType) => {
+
+                        event[1](decoded, (response : Reply | HTTPError) => {
                             response.replyTo = decoded.id;
                             response.from = this.channel;
 
                             this.publisher.publish(
                                 decoded.from,
                                 JSON.stringify(response)
-                            )
-                            console.log("Replying... [%s]", decoded.from);
+                                )
+                                logger.info(`Replying... [${decoded.from}]`);
                         });
 
                     }
                 })
             })
-        } catch(e) {
 
-        }
-        
+        });
+        this.publisher.once('ready', () => {
+            logger.info('Publisher connected!');
+        });
     }
 
-    public on(event : 'create' | 'modify' | 'delete' | 'list', callback : (message : Message, reply : (response : ResponseType) => void) => void) {
+    public on(event : Event, callback : (message : Message, reply : (response : Reply | HTTPError) => void) => void) {
         this.eventListeners.push([event, callback, {payload: {}, status: 500}]);
     }
 
-    public async publish(channel : string = this.channel, message : Message) : Promise<ResponseType> {
-        if(!this.isListening) await this.listen();
-
-        const _message = message;
-        const id = uuid.v4();
-
-        console.log('Publishing with ID "%s" to channel "%s"', id, channel)
-
-        _message.id = id;
-        _message.from = this.channel;
-
-        return new Promise((res, rej) => {
+    public async publish(channel : string = this.channel, message : Message) : Promise<Reply> {
+        return new Promise((res : (value : Reply) => void, rej : (error : HTTPError) => void) => {
             try{
+                const _message = message;
+                const id = uuid.v4();
+
+                logger.info(`Publishing with id=${id} to channel=${channel}`)
+
+                _message.id = id;
+                _message.from = this.channel;
+
                 const listener = (_: any, msg: string) => {
                     const message = JSON.parse(msg);
                     if(message.replyTo === id){
                         this.consumer.removeListener('message', listener);
-                        res(message as ResponseType);
+                        res(message as Reply);
                     }
                 }
                 this.consumer.addListener('message', listener);
 
                 this.publisher.publish(channel, JSON.stringify(_message));
             } catch(e){
-                console.log(e);
-                rej(e);
+                logger.error(e);
+                rej(e as HTTPError);
             }
         })
     }
 }
+
+export type Event = 'create' | 'modify' | 'delete' | 'list';
+
+export const eventHandler = EventHandler.getInstance();
+eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'user_ch');

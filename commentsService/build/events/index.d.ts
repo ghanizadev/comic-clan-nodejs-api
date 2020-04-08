@@ -23,8 +23,11 @@ export default class EventHandler {
     private publisher;
     private channel;
     private isListening;
+    private connectionString;
     private eventListeners;
-    constructor(connectionString: string, channel?: string);
+    constructor(connectionString: string, channel: string);
+    private retry_strategy;
+    private connect;
     listen(channel?: string): Promise<void>;
     on(event: 'create' | 'modify' | 'delete' | 'list', callback: (message: Message, reply: (response: ResponseType) => void) => void): void;
     publish(channel: string | undefined, message: Message): Promise<ResponseType>;

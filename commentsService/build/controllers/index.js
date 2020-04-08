@@ -39,30 +39,26 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var models_1 = __importDefault(require("../models"));
+var database_1 = __importDefault(require("../database"));
 var error_1 = __importDefault(require("../error"));
-var database = new models_1.default('mongodb://localhost:27017', 'comicclan');
-var Post = database.getModel();
-database.connect();
+var Comment = database_1.default.getInstance().getModel();
 exports.default = {
     create: function (body) {
         return __awaiter(this, void 0, void 0, function () {
             var user;
             var _this = this;
             return __generator(this, function (_a) {
-                user = new Post(body);
+                user = new Comment(body);
                 return [2 /*return*/, user.save()
                         .then(function (doc) { return __awaiter(_this, void 0, void 0, function () {
-                        var _id, _v, userId, description, comments, body, media, createdAt, updatedAt;
+                        var _id, _v, userId, body, media, createdAt, updatedAt;
                         return __generator(this, function (_a) {
-                            _id = doc._id, _v = doc._v, userId = doc.userId, description = doc.description, comments = doc.comments, body = doc.body, media = doc.media, createdAt = doc.createdAt, updatedAt = doc.updatedAt;
+                            _id = doc._id, _v = doc._v, userId = doc.userId, body = doc.body, media = doc.media, createdAt = doc.createdAt, updatedAt = doc.updatedAt;
                             return [2 /*return*/, {
                                     _id: _id,
                                     userId: userId,
-                                    description: description,
                                     body: body,
                                     media: media,
-                                    comments: comments,
                                     createdAt: createdAt,
                                     updatedAt: updatedAt,
                                     _v: _v,
@@ -77,36 +73,34 @@ exports.default = {
     },
     list: function (body) {
         return __awaiter(this, void 0, void 0, function () {
-            var users;
+            var comments;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, Post.find(body.query).exec()];
+                    case 0: return [4 /*yield*/, Comment.find(body.query).exec()];
                     case 1:
-                        users = _a.sent();
-                        return [2 /*return*/, users];
+                        comments = _a.sent();
+                        return [2 /*return*/, comments];
                 }
             });
         });
     },
-    modify: function (modifiedPost) {
+    modify: function (modifiedComment) {
         return __awaiter(this, void 0, void 0, function () {
-            var queryPost, _id, _v, userId, comments, description, body, media, createdAt, updatedAt;
+            var queryComment, _id, _v, userId, body, media, createdAt, updatedAt;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, Post.findOneAndUpdate({ _id: modifiedPost._id }, modifiedPost.content, { new: true }).exec()];
+                    case 0: return [4 /*yield*/, Comment.findOneAndUpdate({ _id: modifiedComment._id }, modifiedComment.content, { new: true }).exec()];
                     case 1:
-                        queryPost = _a.sent();
-                        if (!queryPost) {
-                            throw new error_1.default('not_found', "post with id=" + modifiedPost._id + " does not exist or it is deleted", 404);
+                        queryComment = _a.sent();
+                        if (!queryComment) {
+                            throw new error_1.default('not_found', "post with id=" + modifiedComment._id + " does not exist or it is deleted", 404);
                         }
-                        _id = queryPost._id, _v = queryPost._v, userId = queryPost.userId, comments = queryPost.comments, description = queryPost.description, body = queryPost.body, media = queryPost.media, createdAt = queryPost.createdAt, updatedAt = queryPost.updatedAt;
+                        _id = queryComment._id, _v = queryComment._v, userId = queryComment.userId, body = queryComment.body, media = queryComment.media, createdAt = queryComment.createdAt, updatedAt = queryComment.updatedAt;
                         return [2 /*return*/, {
                                 _id: _id,
                                 userId: userId,
-                                description: description,
                                 body: body,
                                 media: media,
-                                comments: comments,
                                 createdAt: createdAt,
                                 updatedAt: updatedAt,
                                 _v: _v,
@@ -117,23 +111,21 @@ exports.default = {
     },
     delete: function (deleteOptions) {
         return __awaiter(this, void 0, void 0, function () {
-            var queryPost, _id, _v, userId, comments, description, body, media, createdAt, updatedAt;
+            var queryComment, _id, _v, userId, body, media, createdAt, updatedAt;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, Post.findOneAndDelete({ _id: deleteOptions._id }).exec()];
+                    case 0: return [4 /*yield*/, Comment.findOneAndDelete({ _id: deleteOptions._id }).exec()];
                     case 1:
-                        queryPost = _a.sent();
-                        if (!queryPost) {
+                        queryComment = _a.sent();
+                        if (!queryComment) {
                             throw new error_1.default('not_found', "post with id=" + deleteOptions._id + " does not exist or it is deleted", 404);
                         }
-                        _id = queryPost._id, _v = queryPost._v, userId = queryPost.userId, comments = queryPost.comments, description = queryPost.description, body = queryPost.body, media = queryPost.media, createdAt = queryPost.createdAt, updatedAt = queryPost.updatedAt;
+                        _id = queryComment._id, _v = queryComment._v, userId = queryComment.userId, body = queryComment.body, media = queryComment.media, createdAt = queryComment.createdAt, updatedAt = queryComment.updatedAt;
                         return [2 /*return*/, {
                                 _id: _id,
                                 userId: userId,
-                                description: description,
                                 body: body,
                                 media: media,
-                                comments: comments,
                                 createdAt: createdAt,
                                 updatedAt: updatedAt,
                                 _v: _v,

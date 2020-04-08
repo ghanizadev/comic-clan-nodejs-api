@@ -13,23 +13,32 @@ router.get('/', (req, res, next) => {
         body: {},
         event: 'list',
     })
-    .then(async posts => {
-        const results = await Promise.all(posts.payload.map(
-            async (post: { userId: any; user: any; }) => {
-                return await req.eventHandler.publish('users_ch', {
-                    body: {query: {_id: post.userId}},
-                    event: 'list',
-                })
-                .then(({ payload }) => {
-                    delete payload[0].password;
-                    delete payload[0].active;
+    .then(async comments => {
+        const results = await Promise.all(
 
-                    post.user = payload[0];
-                    return post;
-                })
-                .catch(next);
-        }))
-        res.status(posts.status).send(polish(results));
+            comments.payload.map( async (comment: { userId: any; user: any; }) => {
+
+            await req.eventHandler.publish('users_ch', {
+                body: {query: {_id: comment.userId}},
+                event: 'list',
+            })
+            .then(({ payload }) => {
+                if(!payload) return;
+
+                comment.user = polish(payload[0]);
+            })
+            .catch(next);
+
+            return comment;
+        }));
+
+        const r : any[] = [];
+
+        results.forEach(e => {
+            if(e) r.push(e);
+        });
+
+        res.status(comments.status).send(r);
     })
     .catch(next);
 })

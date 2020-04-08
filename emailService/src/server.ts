@@ -1,40 +1,27 @@
 import dotenv from 'dotenv';
-import Email from './services/sendEmail';
+import controller from './controllers';
+import EventHandler from './events/index'
 
 dotenv.config();
 
+const eventHandler = new EventHandler(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'email_ch');
+eventHandler.listen();
+
 const run = async () => {
-    const email = new Email();
-
     try{
-        await email.sendMessageAlert(
-            'jf.melo6@gmail.com',
-            {
-                name: 'Jean',
-                postLink: 'http://www.google.com',
-                from: 'Ivona',
-                message: "I love you soooooooooooo much!",
-                postDate: new Date().toLocaleDateString(),
-                profileLink: 'http://facebook.com.br/ghanizadev',
-            }
-        )
+        eventHandler.on('newmessage', async (msg) => {
+            const {email, name, from, message, date} = msg.body;
+            await controller.newMessage(email, name, '#', from, message, date, '#');
+        })
+        eventHandler.on('newuser', async (msg) => {
+            const {email, name} = msg.body;
+            await controller.welcome(email, name, '#', '#')
+        })
 
-        await email.sendWelcomeAlert(
-            'jf.melo6@gmail.com',
-            {
-                name: 'Jean',
-                link: 'http://www.google.com',
-                dashboard: 'http://www.facebook.com'
-            }
-        )
-
-        await email.sendResetAlert(
-            'jf.melo6@gmail.com',
-            {
-                name: 'Jean',
-                link: 'http://www.google.com',
-            }
-        )
+        eventHandler.on('resetpassword', async (msg) => {
+            const {email, name, link} = msg.body;
+            await controller.reset(email, name, link)
+        })
     } catch(e) {
         console.log(e)
     }
