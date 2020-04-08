@@ -4,12 +4,14 @@ import { HTTPError } from '../errors';
 import FormData from 'form-data';
 import logger from '../utils/logger';
 import polish from '../utils/polish'
+import EventHandler from '../events';
 
 const router = express.Router();
+const eventHandler = EventHandler.getInstance();
 
 // Get all comments
 router.get('/', (req, res, next) => {
-    req.eventHandler.publish('comments_ch', {
+    eventHandler.publish('comments_ch', {
         body: {},
         event: 'list',
     })
@@ -18,12 +20,12 @@ router.get('/', (req, res, next) => {
 
             comments.payload.map( async (comment: { userId: any; user: any; }) => {
 
-            await req.eventHandler.publish('users_ch', {
+            await eventHandler.publish('users_ch', {
                 body: {query: {_id: comment.userId}},
                 event: 'list',
             })
             .then(({ payload }) => {
-                if(!payload) return;
+                if(payload.length === 0) return;
 
                 comment.user = polish(payload[0]);
             })
@@ -45,7 +47,7 @@ router.get('/', (req, res, next) => {
 
 // Get post by ID
 router.get('/:id', (req, res, next) => {
-    req.eventHandler.publish('comments_ch', {
+    eventHandler.publish('comments_ch', {
         body: { _id : req.params.id },
         event: 'list',
     })
@@ -59,19 +61,19 @@ router.get('/:id', (req, res, next) => {
 router.post('/', (req, res, next) => {
     const form = new FormData();
 
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: {query: {_id: req.body.postId}},
         event: 'list',
     })
     .then(async () => {
-        const comment = await req.eventHandler.publish('comments_ch', {
+        const comment = await eventHandler.publish('comments_ch', {
             body: req.body,
             event: 'create',
         })
 
         console.log(comment)
 
-        req.eventHandler.publish('posts_ch', {
+        eventHandler.publish('posts_ch', {
             body: {_id: req.body.postId, commentId: comment.payload._id},
             event: 'addcomment',
         })
@@ -108,7 +110,7 @@ router.put('/:id', (req, res, next) => {
     axios.post('http://localhost:3001/?id' + req.params.id, form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
     .then(response => {
         req.body.media = response.data;
-        req.eventHandler.publish('comments_ch', {
+        eventHandler.publish('comments_ch', {
             body: {_id : req.params.id, content: req.body},
             event: 'modify',
         })
@@ -122,7 +124,7 @@ router.put('/:id', (req, res, next) => {
 
 // Delete a post
 router.delete('/:id', (req, res, next) => {
-    req.eventHandler.publish('comments_ch', {
+    eventHandler.publish('comments_ch', {
         body: {_id : req.params.id},
         event: 'delete',
     })
@@ -135,7 +137,7 @@ router.delete('/:id', (req, res, next) => {
 
 // Subscribe to a post
 router.post('/:id', (req, res, next) => {
-    req.eventHandler.publish('comments_ch', {
+    eventHandler.publish('comments_ch', {
         body: {_id : req.params.id},
         event: 'subscribe',
     })

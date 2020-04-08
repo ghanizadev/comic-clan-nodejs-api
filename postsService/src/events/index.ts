@@ -41,43 +41,47 @@ export default class EventHandler {
         this.consumer = redis.createClient({retry_strategy, url: connectionString});
         this.publisher = redis.createClient({retry_strategy, url: connectionString});
 
-        this.consumer.once('ready', () => {
+        this.consumer.once('connect', () => {
             logger.info('Consumer connected!');
 
             logger.info(`Subscribing to channel "${this.channel}"...`)
             this.consumer.subscribe(this.channel);
-
+    
             this.consumer.on('subscribe', (ch) => logger.info(`Consumer subscribed to "${ch}"`));
-
+            this.consumer.on('error', (error) => logger.error(error));
+    
             this.consumer.on('message', (ch, msg) => {
                 const decoded = JSON.parse(msg);
-
+    
                 logger.info(`Message received from "${decoded.from}"`)
-
+    
                 this.eventListeners.forEach(event => {
                     if(decoded.event === event[0]){
-
+    
                         event[2] = decoded;
-
+    
                         event[1](decoded, (response : Reply | HTTPError) => {
                             response.replyTo = decoded.id;
                             response.from = this.channel;
-
+    
                             this.publisher.publish(
                                 decoded.from,
                                 JSON.stringify(response)
                                 )
                                 logger.info(`Replying... [${decoded.from}]`);
                         });
-
+    
                     }
                 })
             })
 
         });
-        this.publisher.once('ready', () => {
+        this.publisher.once('connect', () => {
             logger.info('Publisher connected!');
         });
+
+
+        
     }
 
     public on(event : Event, callback : (message : Message, reply : (response : Reply | HTTPError) => void) => void) {
@@ -102,11 +106,12 @@ export default class EventHandler {
                         res(message as Reply);
                     }
                 }
-                this.consumer.addListener('message', listener);
+                // this.consumer.addListener('message', listener);
+                console.log(this.consumer)
 
                 this.publisher.publish(channel, JSON.stringify(_message));
             } catch(e){
-                logger.error(e);
+                logger.error(e.message);
                 rej(e as HTTPError);
             }
         })
@@ -116,4 +121,3 @@ export default class EventHandler {
 export type Event = 'create' | 'modify' | 'delete' | 'list' | 'addmedia' | 'addcomment';
 
 export const eventHandler = EventHandler.getInstance();
-eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'user_ch');

@@ -4,12 +4,14 @@ import { HTTPError } from '../errors';
 import FormData from 'form-data';
 import logger from '../utils/logger';
 import polish from '../utils/polish'
+import Eventhandler from '../events';
 
 const router = express.Router();
+const eventHandler = Eventhandler.getInstance();
 
 // Get all posts
 router.get('/', (req, res, next) => {
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: {},
         event: 'list',
     })
@@ -17,9 +19,9 @@ router.get('/', (req, res, next) => {
 
         const results = await Promise.all(
 
-            posts.payload.map(async(post: { userId: string; user: any; comments : string[]; }) => {
+            posts.payload.map(async(post: { userId: string; user: any; comments : any[]; }) => {
 
-                await req.eventHandler.publish('users_ch', {
+                await eventHandler.publish('users_ch', {
                     body: {query: {_id: post.userId}},
                     event: 'list',
                 })
@@ -30,14 +32,32 @@ router.get('/', (req, res, next) => {
                 })
                 .catch(next);
 
-                await req.eventHandler.publish('comments_ch', {
+                await eventHandler.publish('comments_ch', {
                     body: {query: {_id: {$in : post.comments } }},
                     event: 'list',
                 })
-                .then(({ payload }) => {
+                .then(async ({ payload }) => {
                     if(payload.length === 0) return;
 
-                    post.comments = payload;
+                    const comments = await Promise.all(
+                        payload.map(async (comment: { userId: string; user : any}) => {
+                            return await eventHandler.publish('users_ch', {
+                                body: {query: {_id: comment.userId}},
+                                event: 'list',
+                            })
+                            .then(({ payload }) => {
+
+                                if(payload.length === 0) return;
+                                comment.user = polish(payload.shift());
+                                // delete comment.userId;
+                                return comment;
+                            })
+                            .catch(next);
+                        })
+                    )
+
+                    console.log(comments)
+                    post.comments = comments;
                 })
                 .catch(next);
 
@@ -45,7 +65,7 @@ router.get('/', (req, res, next) => {
             })
         );
 
-        const r : any[] = [];
+        const r : any[] = []
 
         results.forEach(e => {
             if(e) r.push(polish(e));
@@ -58,7 +78,7 @@ router.get('/', (req, res, next) => {
 
 // Get post by ID
 router.get('/:id', (req, res, next) => {
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: { _id : req.params.id },
         event: 'list',
     })
@@ -70,7 +90,7 @@ router.get('/:id', (req, res, next) => {
 
 // Create a new post
 router.post('/', (req, res, next) => {
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: req.body,
         event: 'create',
     })
@@ -82,7 +102,7 @@ router.post('/', (req, res, next) => {
 
 // Alter a post
 router.put('/:id', (req, res, next) => {
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: {_id : req.params.id, content: req.body},
         event: 'modify',
     })
@@ -94,7 +114,7 @@ router.put('/:id', (req, res, next) => {
 
 // Delete a post
 router.delete('/:id', (req, res, next) => {
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: {_id : req.params.id},
         event: 'delete',
     })
@@ -107,7 +127,7 @@ router.delete('/:id', (req, res, next) => {
 
 // Subscribe to a post
 router.post('/:id', (req, res, next) => {
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: {_id : req.params.id},
         event: 'subscribe',
     })

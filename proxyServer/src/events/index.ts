@@ -28,7 +28,7 @@ export default class EventHandler {
 
     public static getInstance() {
         if(!EventHandler.instance){
-            EventHandler.instance = new this();
+            EventHandler.instance = new EventHandler();
         }
         return EventHandler.instance;
     }
@@ -41,7 +41,7 @@ export default class EventHandler {
         this.consumer = redis.createClient({retry_strategy, url: connectionString});
         this.publisher = redis.createClient({retry_strategy, url: connectionString});
 
-        this.consumer.once('ready', () => {
+        this.consumer.once('connect', () => {
             logger.info('Consumer connected!');
 
             logger.info(`Subscribing to channel "${this.channel}"...`)
@@ -74,9 +74,6 @@ export default class EventHandler {
                 })
             })
 
-        });
-        this.publisher.once('ready', () => {
-            logger.info('Publisher connected!');
         });
     }
 

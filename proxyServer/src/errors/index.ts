@@ -19,5 +19,6 @@ export class HTTPError extends Error {
         else this.level = 'error'
 
         logger.log(this.level,`(${status}) ERROR: "${error}", ERROR_DESCRIPTION: "${error_description}"`);
+        if(this.level === 'error') process.exit(1);
     }
 }
