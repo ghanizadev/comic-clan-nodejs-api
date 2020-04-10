@@ -4,19 +4,39 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var redis_1 = __importDefault(require("redis"));
-exports.default = {
-    connect: function (connectionString, databaseName) {
-        function retry_strategy(options) {
-            if (options.attempt > 30) {
-                console.log('Redis server is not responding...');
-                process.exit(1);
-            }
-            if (options.error && options.error.code === "ECONNREFUSED") {
-                console.log('Connection refused, trying again...[%s]', options.attempt);
-                return 1000;
-            }
+var Database = /** @class */ (function () {
+    function Database() {
+    }
+    Database.getInstance = function () {
+        if (!Database.instance)
+            Database.instance = new Database();
+        return Database.instance;
+    };
+    Database.prototype.retry_strategy = function (options) {
+        if (options.attempt > 30) {
+            console.log('Redis server is not responding...');
+            process.exit(1);
+        }
+        if (options.error && options.error.code === "ECONNREFUSED") {
             return 1000;
         }
-        return redis_1.default.createClient({ url: connectionString, retry_strategy: retry_strategy });
-    }
-};
+        return 1000;
+    };
+    Database.prototype.connect = function (connectionString, databaseName) {
+        var _this = this;
+        return new Promise(function (res, rej) {
+            var retry_strategy = _this.retry_strategy;
+            var r = redis_1.default.createClient({ url: connectionString, retry_strategy: retry_strategy });
+            _this.db = r;
+            r.once('connect', function () {
+                res(r);
+            });
+            r.once('error', function () { return rej(); });
+        });
+    };
+    Database.prototype.get = function () {
+        return this.db;
+    };
+    return Database;
+}());
+exports.default = Database;

@@ -1,11 +1,10 @@
-import EventHandler from '../events'
-import database from '../database';
 import {Request, Response, NextFunction} from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
 import { HTTPError } from '../errors';
+import Database from '../database';
 
 export interface IAuthorize {
     username ?: string;
@@ -15,19 +14,8 @@ export interface IAuthorize {
     scope ?: string;
 }
 
-const eventHandler = new EventHandler(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'auth_ch');
-eventHandler.listen();
+const db = Database.getInstance().get();
 
-const db = database.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'auth');
-
-//TODO: Deixar legivel
-eventHandler.on('newuser', (message) => {
-    db.hset(message.body.email, 'password', message.body.password)
-})
-
-eventHandler.on('removeuser', (message) => {
-    db.del(message.body.email)
-})
 
 const issueNewToken = async (username: string, password: string, next : NextFunction) => {
     return await new Promise((res, rej) => {

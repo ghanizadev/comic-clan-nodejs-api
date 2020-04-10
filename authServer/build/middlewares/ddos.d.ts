@@ -1,3 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-declare const rateLimiterMiddleware: (req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response<any>, next: NextFunction) => void;
-export default rateLimiterMiddleware;
+import { RedisClient } from 'redis';
+declare const middleware: (db: RedisClient) => (req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response<any>, next: NextFunction) => void;
+export default middleware;

@@ -1,4 +1,4 @@
-import redis from 'redis';
+import redis, { RedisClient } from 'redis';
 export interface Message {
     id?: string;
     event: string;
@@ -6,7 +6,12 @@ export interface Message {
     body: any;
     replyTo?: string;
 }
-declare const _default: {
-    connect(connectionString: string, databaseName: string): redis.RedisClient;
-};
-export default _default;
+export default class Database {
+    private static instance;
+    private db;
+    private constructor();
+    static getInstance(): Database;
+    private retry_strategy;
+    connect(connectionString: string, databaseName: string): Promise<RedisClient>;
+    get(): redis.RedisClient;
+}

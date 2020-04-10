@@ -7,12 +7,14 @@ export interface Message {
 }
 declare type Event = 'newuser' | 'resetpassword' | 'removeuser';
 export default class EventHandler {
+    private static instance;
     private consumer;
     private channel;
     private eventListeners;
     private retry_strategy;
-    constructor(connectionString: string, channel: string);
+    private constructor();
+    static getInstance(): EventHandler;
+    connect(connectionString: string, channel: string): void;
     on(event: Event, callback: (message: Message) => void): void;
-    listen(channel?: string): void;
 }
 export {};

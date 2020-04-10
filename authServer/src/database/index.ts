@@ -8,23 +8,46 @@ export interface Message {
     replyTo ?: string;
 }
 
-export default {
-    connect(connectionString : string, databaseName : string) : RedisClient{
+export default class Database {
+    private static instance : Database;
+    private db !: RedisClient;
 
-        function retry_strategy(options : any) : number | Error {
-            if (options.attempt > 30) {
-                console.log('Redis server is not responding...');
-                process.exit(1);
-            }
-            if (options.error && options.error.code === "ECONNREFUSED") {
-                console.log('Connection refused, trying again...[%s]', options.attempt)
-                return 1000;
-            }
+    private constructor() {}
+
+    public static getInstance(){
+        if(!Database.instance) Database.instance = new Database();
+
+        return Database.instance;
+    }
+
+    private retry_strategy(options : any) : number | Error {
+        if (options.attempt > 30) {
+            console.log('Redis server is not responding...');
+            process.exit(1);
+        }
+        if (options.error && options.error.code === "ECONNREFUSED") {
             return 1000;
         }
+        return 1000;
+    }
 
-        return redis.createClient({url: connectionString, retry_strategy});
+    connect(connectionString : string, databaseName : string) : Promise<RedisClient>{
+        return new Promise((res, rej) => {
+            const {retry_strategy} = this;
+    
+            let r =redis.createClient({url: connectionString, retry_strategy});
+            this.db = r;
+    
+            r.once('connect', () => {
+                res(r);
+            })
+
+            r.once('error', () => rej());
+        })
 
     }
-    
+
+    public get() {
+        return this.db;
+    }
 }

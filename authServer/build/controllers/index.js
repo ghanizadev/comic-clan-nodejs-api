@@ -39,23 +39,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var events_1 = __importDefault(require("../events"));
-var database_1 = __importDefault(require("../database"));
 var jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 var bcrypt_1 = __importDefault(require("bcrypt"));
 var fs_1 = __importDefault(require("fs"));
 var path_1 = __importDefault(require("path"));
 var errors_1 = require("../errors");
-var eventHandler = new events_1.default(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'auth_ch');
-eventHandler.listen();
-var db = database_1.default.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'auth');
-//TODO: Deixar legivel
-eventHandler.on('newuser', function (message) {
-    db.hset(message.body.email, 'password', message.body.password);
-});
-eventHandler.on('removeuser', function (message) {
-    db.del(message.body.email);
-});
+var database_1 = __importDefault(require("../database"));
+var db = database_1.default.getInstance().get();
 var issueNewToken = function (username, password, next) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
