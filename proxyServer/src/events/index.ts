@@ -96,7 +96,10 @@ export default class EventHandler {
                     const message = JSON.parse(msg);
                     if(message.replyTo === id){
                         this.consumer.removeListener('message', listener);
-                        res(message as Reply);
+                        if(message.status >= 400)
+                            rej(message as HTTPError)
+                        else
+                            res(message as Reply);
                     }
                 }
                 this.consumer.addListener('message', listener);

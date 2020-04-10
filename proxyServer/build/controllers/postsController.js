@@ -40,42 +40,92 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
-var axios_1 = __importDefault(require("axios"));
-var form_data_1 = __importDefault(require("form-data"));
 var polish_1 = __importDefault(require("../utils/polish"));
+var events_1 = __importDefault(require("../events"));
 var router = express_1.default.Router();
+var eventHandler = events_1.default.getInstance();
 // Get all posts
 router.get('/', function (req, res, next) {
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: {},
         event: 'list',
     })
         .then(function (posts) { return __awaiter(void 0, void 0, void 0, function () {
-        var results;
+        var results, r;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0: return [4 /*yield*/, Promise.all(posts.payload.map(function (post) { return __awaiter(void 0, void 0, void 0, function () {
                         return __generator(this, function (_a) {
                             switch (_a.label) {
-                                case 0: return [4 /*yield*/, req.eventHandler.publish('users_ch', {
+                                case 0: return [4 /*yield*/, eventHandler.publish('users_ch', {
                                         body: { query: { _id: post.userId } },
                                         event: 'list',
                                     })
                                         .then(function (_a) {
                                         var payload = _a.payload;
-                                        delete payload[0].password;
-                                        delete payload[0].active;
-                                        post.user = payload[0];
-                                        return post;
+                                        if (payload.length === 0)
+                                            return;
+                                        post.user = polish_1.default(payload.shift());
                                     })
                                         .catch(next)];
-                                case 1: return [2 /*return*/, _a.sent()];
+                                case 1:
+                                    _a.sent();
+                                    return [4 /*yield*/, eventHandler.publish('comments_ch', {
+                                            body: { query: { _id: { $in: post.comments } } },
+                                            event: 'list',
+                                        })
+                                            .then(function (_a) {
+                                            var payload = _a.payload;
+                                            return __awaiter(void 0, void 0, void 0, function () {
+                                                var comments;
+                                                return __generator(this, function (_b) {
+                                                    switch (_b.label) {
+                                                        case 0:
+                                                            if (payload.length === 0)
+                                                                return [2 /*return*/];
+                                                            return [4 /*yield*/, Promise.all(payload.map(function (comment) { return __awaiter(void 0, void 0, void 0, function () {
+                                                                    return __generator(this, function (_a) {
+                                                                        switch (_a.label) {
+                                                                            case 0: return [4 /*yield*/, eventHandler.publish('users_ch', {
+                                                                                    body: { query: { _id: comment.userId } },
+                                                                                    event: 'list',
+                                                                                })
+                                                                                    .then(function (_a) {
+                                                                                    var payload = _a.payload;
+                                                                                    if (payload.length === 0)
+                                                                                        return;
+                                                                                    comment.user = polish_1.default(payload.shift());
+                                                                                    delete comment.userId;
+                                                                                    return comment;
+                                                                                })
+                                                                                    .catch(next)];
+                                                                            case 1: return [2 /*return*/, _a.sent()];
+                                                                        }
+                                                                    });
+                                                                }); }))];
+                                                        case 1:
+                                                            comments = _b.sent();
+                                                            post.comments = comments;
+                                                            return [2 /*return*/];
+                                                    }
+                                                });
+                                            });
+                                        })
+                                            .catch(next)];
+                                case 2:
+                                    _a.sent();
+                                    return [2 /*return*/, post];
                             }
                         });
                     }); }))];
                 case 1:
                     results = _a.sent();
-                    res.status(posts.status).send(polish_1.default(results));
+                    r = [];
+                    results.forEach(function (e) {
+                        if (e)
+                            r.push(polish_1.default(e));
+                    });
+                    res.status(posts.status).send(r);
                     return [2 /*return*/];
             }
         });
@@ -84,7 +134,7 @@ router.get('/', function (req, res, next) {
 });
 // Get post by ID
 router.get('/:id', function (req, res, next) {
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: { _id: req.params.id },
         event: 'list',
     })
@@ -95,60 +145,29 @@ router.get('/:id', function (req, res, next) {
 });
 // Create a new post
 router.post('/', function (req, res, next) {
-    var form = new form_data_1.default();
-    if (Array.isArray(req.files)) {
-        ;
-        req.files.forEach(function (file) {
-            form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
-        });
-    }
-    axios_1.default.post('http://localhost:3001/?id' + req.params.id, form, { headers: form.getHeaders(), validateStatus: function (status) { return status < 500; } })
-        .then(function (response) {
-        req.eventHandler.publish('users_ch', {
-            body: { query: { _id: req.body.userId } },
-            event: 'list',
-        })
-            .then(function () {
-            req.body.media = response.data;
-            req.eventHandler.publish('posts_ch', {
-                body: req.body,
-                event: 'create',
-            })
-                .then(function (reply) {
-                res.status(reply.status).send(polish_1.default(reply));
-            })
-                .catch(next);
-        })
-            .catch(next);
+    eventHandler.publish('posts_ch', {
+        body: req.body,
+        event: 'create',
+    })
+        .then(function (reply) {
+        res.status(reply.status).send(polish_1.default(reply));
     })
         .catch(next);
 });
 // Alter a post
 router.put('/:id', function (req, res, next) {
-    var form = new form_data_1.default();
-    if (Array.isArray(req.files)) {
-        ;
-        req.files.forEach(function (file) {
-            form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
-        });
-    }
-    axios_1.default.post('http://localhost:3001/?id' + req.params.id, form, { headers: form.getHeaders(), validateStatus: function (status) { return status < 500; } })
-        .then(function (response) {
-        req.body.media = response.data;
-        req.eventHandler.publish('posts_ch', {
-            body: { _id: req.params.id, content: req.body },
-            event: 'modify',
-        })
-            .then(function (reply) {
-            res.status(reply.status).send(polish_1.default(reply));
-        })
-            .catch(next);
+    eventHandler.publish('posts_ch', {
+        body: { _id: req.params.id, content: req.body },
+        event: 'modify',
+    })
+        .then(function (reply) {
+        res.status(reply.status).send(polish_1.default(reply));
     })
         .catch(next);
 });
 // Delete a post
 router.delete('/:id', function (req, res, next) {
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: { _id: req.params.id },
         event: 'delete',
     })
@@ -159,7 +178,7 @@ router.delete('/:id', function (req, res, next) {
 });
 // Subscribe to a post
 router.post('/:id', function (req, res, next) {
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: { _id: req.params.id },
         event: 'subscribe',
     })

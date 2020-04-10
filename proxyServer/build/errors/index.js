@@ -12,11 +12,8 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var logger_1 = __importDefault(require("../utils/logger"));
+var logger_1 = require("../utils/logger");
 var HTTPError = /** @class */ (function (_super) {
     __extends(HTTPError, _super);
     // tslint:disable-next-line: variable-name
@@ -38,7 +35,9 @@ var HTTPError = /** @class */ (function (_super) {
             _this.level = 'warn';
         else
             _this.level = 'error';
-        logger_1.default.log(_this.level, "(" + status + ") ERROR: \"" + error + "\", ERROR_DESCRIPTION: \"" + error_description + "\"");
+        logger_1.logger.log(_this.level, "(" + status + ") ERROR: \"" + error + "\", ERROR_DESCRIPTION: \"" + error_description + "\"");
+        if (_this.level === 'error')
+            process.exit(1);
         return _this;
     }
     return HTTPError;

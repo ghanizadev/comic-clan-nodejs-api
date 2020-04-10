@@ -47,8 +47,9 @@ interface IPostAddCommentOptions {
 }
 
 interface IPostAddMediaOptions {
-    _id : string;
-    photosURL : string | string[];
+    id : string;
+    type: 'post' | 'comment';
+    file : string;
 }
 
 export default {
@@ -145,34 +146,28 @@ export default {
     },
 
     async addMedia(modifiedPost : IPostAddMediaOptions) : Promise<IPostDTO | void> {
-        const queryPost = await Post.findOne({ _id: modifiedPost._id }).exec();
-
-        if(!queryPost || !queryPost.media) return;
-
-        if(Array.isArray(modifiedPost.photosURL)){
-            modifiedPost.photosURL = Array.prototype.concat(queryPost.media, modifiedPost.photosURL);
-        }else {
-            queryPost.media.push(modifiedPost.photosURL)
+        const queryPost = await Post.findOne({ _id: modifiedPost.id }).exec();
+        
+        if(!queryPost) {
+            throw new HTTPError(
+                'not_found',
+                `post with id=${modifiedPost.id} does not exist or it is deleted`,
+                404
+            );
         }
 
+        queryPost.media?.push(modifiedPost.file);
         const result = await queryPost.save();
 
         if(!result) {
             throw new HTTPError(
                 'not_found',
-                `post with id=${modifiedPost._id} does not exist or it is deleted`,
+                `post with id=${modifiedPost.id} does not exist or it is deleted`,
                 404
             );
         }
             
             
-        if(!queryPost) {
-            throw new HTTPError(
-                'not_found',
-                `post with id=${modifiedPost._id} does not exist or it is deleted`,
-                404
-            );
-        }
             
         const { _id, _v, userId, comments, description, body, media, createdAt, updatedAt } = queryPost;
 

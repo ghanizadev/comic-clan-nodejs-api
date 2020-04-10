@@ -6,31 +6,31 @@
   "license": "MIT",
   "scripts": {
     "dev": "nodemon src/server.ts",
-    "build": "tsc",
     "start": "node build/server.js",
-    "test": "cross-env NODE_ENV=test nyc --report --reporter=lcov npx mocha"
+    "test": "cross-env NODE_ENV=test nyc --report --reporter=lcov npx mocha",
+    "build": "tsc"
   },
   "devDependencies": {
+    "cross-env": "^7.0.2",
+    "nodemon": "^2.0.2",
+    "nyc": "^15.0.0",
+    "supertest": "^4.0.2",
+    "ts-node": "^8.8.1"
+  },
+  "dependencies": {
     "@types/amqplib": "^0.5.13",
     "@types/bcrypt": "^3.0.0",
     "@types/dotenv": "^8.2.0",
     "@types/mongoose": "^5.7.8",
     "@types/redis": "^2.8.17",
     "@types/uuid": "^7.0.2",
-    "cross-env": "^7.0.2",
-    "nodemon": "^2.0.2",
-    "nyc": "^15.0.0",
-    "supertest": "^4.0.2",
-    "ts-node": "^8.8.1",
-    "typescript": "^3.8.3"
-  },
-  "dependencies": {
     "amqplib": "^0.5.5",
     "bcrypt": "^4.0.1",
     "dotenv": "^8.2.0",
     "mongoose": "^5.9.7",
     "redis": "^3.0.2",
     "uuid": "^7.0.3",
-    "winston": "^3.2.1"
+    "winston": "^3.2.1",
+    "typescript": "^3.8.3"
   }
 }

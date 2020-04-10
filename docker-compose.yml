@@ -8,11 +8,10 @@ services:
       - redis-net
     volumes:
       - redis-data:/data
+    logging:
+      driver: none
   mongo:
     image: mongo:latest
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: rootpassword
     hostname: mongo
     expose: 
       - 27017
@@ -20,17 +19,131 @@ services:
       - mongo-net
     volumes:
       - mongo-data:/data/db
+    logging:
+      driver: none
+
   proxy:
-    build: ./proxyServer
+    image: proxy:0.0.1
+    build:
+      context: ./proxyServer
+      args: 
+        - ENV=$ENV
     ports:
       - "8080:8080"
     networks:
       - redis-net
     environment:
-      - REDIS_SERVER=redis://redis:6379/
+      - REDIS_SERVER=redis://redis:6379
       - PORT=8080
+      - NODE_ENV=${ENV}
     depends_on: 
       - redis
+
+  user:
+    image: user:0.0.1
+    build:
+      context: ./usersService
+      args: 
+        - ENV=$ENV
+    networks:
+      - redis-net
+      - mongo-net
+    environment:
+      - REDIS_SERVER=redis://redis:6379
+      - MONGO_SERVER=mongodb://mongo:27017
+      - NODE_ENV=${ENV}
+    depends_on: 
+      - redis
+      - mongo
+
+  email:
+    image: email:0.0.1
+    build: 
+      context: ./emailService
+      args:
+        - ENV=$ENV
+    networks:
+      - redis-net
+      - mongo-net
+    environment:
+      - REDIS_SERVER=redis://redis:6379
+      - EMAIL_CONNECTION
+      - NODE_ENV=${ENV}
+    depends_on: 
+      - redis
+
+  posts:
+    image: posts:0.0.1
+    build:
+      context: ./postsService
+      args:
+        - ENV=$ENV
+    networks:
+      - redis-net
+      - mongo-net
+    environment:
+      - REDIS_SERVER=redis://redis:6379
+      - MONGO_SERVER=mongodb://mongo:27017
+      - NODE_ENV=${ENV}
+    depends_on: 
+      - redis
+      - mongo
+
+  comments:
+    image: comments:0.0.1
+    build:
+      context: ./commentsService
+      args:
+        - ENV=$ENV
+    networks:
+      - redis-net
+      - mongo-net
+    environment:
+      - REDIS_SERVER=redis://redis:6379
+      - MONGO_SERVER=mongodb://mongo:27017
+      - NODE_ENV=${ENV}
+    depends_on: 
+      - redis
+      - mongo
+
+  auth:
+    image: auth:0.0.1
+    build:
+      context: ./authServer
+      args:
+        - ENV=$ENV
+    networks:
+      - redis-net
+    environment:
+      - REDIS_SERVER=redis://redis:6379
+      - NODE_ENV=${ENV}
+      - PORT=8081
+    depends_on: 
+      - redis
+      - mongo
+    expose:
+      - 8081
+
+  upload:
+    image: upload:0.0.1
+    build:
+      context: ./uploadService
+      args:
+        - ENV=$ENV
+    networks:
+      - redis-net
+    environment:
+      - REDIS_SERVER=redis://redis:6379
+      - NODE_ENV=${ENV}
+      - AWS_S3_KEY
+      - AWS_S3_SECRET
+      - AWS_S3_BUCKET
+      - PORT=8082
+    depends_on: 
+      - redis
+      - mongo
+    expose:
+      - 8082
 
 volumes:
   mongo-data:

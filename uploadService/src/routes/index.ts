@@ -1,48 +1,45 @@
 import express from 'express';
-import AwsS3 from '../services/aws';
-import streamifier from 'streamifier';
-import errors, { HTTPError } from '../errors'
+import s3 from '../services/aws';
+// import { MultiStream } from '../utils/streamifier';
+import { HTTPError } from '../errors'
 import multer from 'multer';
+import middlewares from '../middlewares';
 import logger from '../utils/logger';
+import EventHandler from '../events';
+import aws from 'aws-sdk';
 
 const router = express.Router();
 const upload = multer()
 
-router.post('/', upload.array('media'), async (req, res, next) => {
-    try{
-    const s3 = new AwsS3('comicclanapi');
-    const paths = []
+const eventHandler = EventHandler.getInstance();
+eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379', 'uploads_ch')
 
-    await s3.getOrCreateBucket();
-    await s3.setBucketPublic();
 
-    const publishFile = async (file, id) => {
-        const stream = streamifier.createReadStream(file.buffer);
-        const path = await s3.uploadFile(stream, file.originalname.split('.')[1], id);
-        paths.push(path);
+router.post('/', upload.single('media'), async (req, res, next) => {
+    try {
+        const {file} = req;
 
-        return;
-    }
-
-    if(Array.isArray(req.files)) {
-        if(req.files.length === 0) throw new HTTPError('empty_form', 'no files were added to request form data', 400);
-
-        await Promise.all(req.files.map(async file => {
-            await publishFile(file, req.query.id);
-        }))
-
-        return res.json(paths)
-    }
-
-    throw new HTTPError('failed_to_validate', `failed to verify files in request form, be asured it is tagged "media" in your form's field`, 400);
+        const data = await s3.upload(file.buffer, file.originalname.split('.')[1]);
+        res.send(data.Location);
 
     } catch(e) {
-        if(e instanceof HTTPError) next(e);
-        else next();
-    }
-
+        console.error(e)
+        next(e)}
 })
 
-router.use(errors);
+router.patch('/:id', (req, res, next) => {
+
+    s3.renameFile(req.params.id, `${req.body.id}_${req.params.id.substring(2)}`)
+    .then(() => {
+        eventHandler.publish(req.body.type + 's_ch', { body: { id: req.body.id, file: `${req.body.id}_${req.params.id.substring(2)}` }, event: 'addmedia'})
+        .then(() => {
+            res.sendStatus(204);
+        })
+        .catch(next)
+    })
+    .catch(next)
+})
+
+router.use(middlewares.errorHandler);
 
 export default router;

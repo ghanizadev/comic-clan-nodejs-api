@@ -42,6 +42,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var nodemailer_1 = require("nodemailer");
 var ejs_1 = __importDefault(require("ejs"));
 var path_1 = __importDefault(require("path"));
+var dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 var Template;
 (function (Template) {
     Template[Template["welcome"] = 0] = "welcome";
@@ -57,18 +59,8 @@ var EmailHandler = /** @class */ (function () {
         this.mailer = this.init();
     }
     EmailHandler.prototype.init = function () {
-        var _a = process.env, EMAIL_PASS = _a.EMAIL_PASS, EMAIL_PORT = _a.EMAIL_PORT, EMAIL_USER = _a.EMAIL_USER, EMAIL_SMTP = _a.EMAIL_SMTP;
-        // const params ={
-        //     host: EMAIL_SMTP || '',
-        //     port: EMAIL_PORT || '',
-        //     secure: false, // true for 465, false for other ports
-        //     auth: {
-        //       user: EMAIL_USER || '', // generated ethereal user
-        //       pass: EMAIL_PASS || '' // generated ethereal password
-        //     },
-        // }
-        // return createTransport(params);
-        var poolConfig = "smtp://" + EMAIL_USER + ":" + EMAIL_PASS + "@" + EMAIL_SMTP;
+        var poolConfig = process.env.EMAIL_CONNECTION;
+        console.log(poolConfig);
         return nodemailer_1.createTransport(poolConfig);
     };
     EmailHandler.prototype.sendMessageAlert = function (to, body) {

@@ -33,13 +33,10 @@ type ResetAlertBody = {
 export default class EmailHandler {
 
     private mailer : Transporter;
-    private contact : string = '"ComicClan Team" <team@comicclan.com>'
+    private contact : string = '"ComicClan Team" <noreply@ghanizadev.com.br>'
 
     private init() {
-        const {EMAIL_PASS, EMAIL_USER, EMAIL_PORT, EMAIL_SMTP} = process.env;
-
-        let poolConfig = `smtp://${EMAIL_USER}:${EMAIL_PASS}@${EMAIL_SMTP}:${EMAIL_PORT}/?pool=true`;
-        console.log(poolConfig)
+        let poolConfig = process.env.EMAIL_CONNECTION;
         return createTransport(poolConfig);
     }
     constructor(contactInfo ?:{ name : string, email : string}) {

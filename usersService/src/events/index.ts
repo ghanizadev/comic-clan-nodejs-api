@@ -41,7 +41,7 @@ export default class EventHandler {
         this.consumer = redis.createClient({retry_strategy, url: connectionString});
         this.publisher = redis.createClient({retry_strategy, url: connectionString});
 
-        this.consumer.once('ready', () => {
+        this.consumer.once('connect', () => {
             logger.info('Consumer connected!');
 
             logger.info(`Subscribing to channel "${this.channel}"...`)
@@ -75,7 +75,7 @@ export default class EventHandler {
             })
 
         });
-        this.publisher.once('ready', () => {
+        this.publisher.once('connect', () => {
             logger.info('Publisher connected!');
         });
     }
@@ -114,6 +114,3 @@ export default class EventHandler {
 }
 
 export type Event = 'create' | 'modify' | 'delete' | 'list';
-
-export const eventHandler = EventHandler.getInstance();
-eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'user_ch');

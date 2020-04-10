@@ -1,14 +1,11 @@
 FROM node:12.16.1-alpine3.11
 
-ENV PORT=8080
+ARG ENV
+ENV NODE_ENV=$ENV
 
-COPY . /
-
-ADD /wait.sh /wait.sh
-
+COPY package.json .
 RUN npm install
+COPY . /
 RUN npm run build
 
 CMD npm run start
-
-EXPOSE 8080

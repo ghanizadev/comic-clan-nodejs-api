@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 export interface IAuthorize {
-    username: string;
-    password: string;
+    username?: string;
+    password?: string;
+    refresh_token?: string;
     grant_type: 'password' | 'refresh_token';
-    scope: string;
+    scope?: string;
 }
 declare const _default: {
     authorize(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response<any>, next: NextFunction): Promise<void>;
-    revoke(): Promise<void>;
+    refresh(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response<any>, next: NextFunction): Promise<void>;
+    revoke(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response<any>, next: NextFunction): Promise<boolean>;
 };
 export default _default;

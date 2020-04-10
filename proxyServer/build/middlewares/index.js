@@ -64,5 +64,5 @@ exports.default = {
                 return [2 /*return*/];
             });
         });
-    }
+    },
 };

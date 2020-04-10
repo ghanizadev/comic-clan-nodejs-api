@@ -6,7 +6,7 @@
 
 Build a complete REST API to be consumed by a new social network focused in comic books. The client has the following requests:
 
-- The aplication consists in store and provide posts, comments made by users from ComicClan community.
+- The application consists in a store and provide posts, comments made by users from ComicClan community.
 - The API will be consumed by a desktop front-end and a mobile app.
 
 ## Features
@@ -14,7 +14,7 @@ Build a complete REST API to be consumed by a new social network focused in comi
 This counts with the following features:
 
 - Built along with NodeJs and ExpressJs framework;
-- Secure endpoints protected by a OAuth2.0 authentication method;
+- Secure endpoints protected by an OAuth2.0 authentication method;
 - Support to GraphQL;
 - Microservices pattern;
 - Scalable and flexible;
@@ -22,9 +22,9 @@ This counts with the following features:
 
 ## First Ideas
 
-- Apply TDD as development behaviour;
+- Apply TDD as development behavior;
 - Use continuous integration;
-- Clean code and redability with SonarQube and ESlint;
+- Clean code and readability with SonarQube and ESlint;
 - Upload Images using AWS S3 free tier;
 
 ## Technologies used

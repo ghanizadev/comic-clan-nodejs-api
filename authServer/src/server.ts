@@ -25,5 +25,5 @@ app.use(ddos);
 app.use('/oauth', routes);
 
 
+console.log("started at ", process.env.PORT || 3333)
 https.createServer(options, app).listen(process.env.PORT || 3333)
-

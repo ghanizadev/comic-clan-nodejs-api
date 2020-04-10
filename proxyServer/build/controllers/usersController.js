@@ -50,46 +50,73 @@ var express = __importStar(require("express"));
 var axios_1 = __importDefault(require("axios"));
 var form_data_1 = __importDefault(require("form-data"));
 var errors_1 = require("../errors");
-var polish_1 = __importDefault(require("../utils/polish"));
+var events_1 = __importDefault(require("../events"));
 var router = express.Router();
+var eventHandler = events_1.default.getInstance();
 // Get all users
 router.get('/', function (req, res, next) {
-    req.eventHandler.publish('users_ch', {
+    eventHandler.publish('users_ch', {
         body: {},
         event: 'list',
     })
         .then(function (reply) {
-        res.status(reply.status).send(polish_1.default(reply));
+        var response = [];
+        reply.payload.forEach(function (item) {
+            var _id = item._id, name = item.name, email = item.email, createdAt = item.createdAt, updatedAt = item.updatedAt;
+            response.push({
+                _id: _id,
+                name: name,
+                email: email,
+                createdAt: createdAt,
+                updatedAt: updatedAt
+            });
+        });
+        res.status(reply.status).send(response);
     })
         .catch(next);
 });
 // Get by ID
 router.get('/:email', function (req, res, next) {
-    req.eventHandler.publish('users_ch', {
+    eventHandler.publish('users_ch', {
         body: { email: req.params.email },
         event: 'list',
     })
         .then(function (reply) {
-        res.status(reply.status).send(reply.payload);
+        var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, password = _a.password, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
+        var response = {
+            _id: _id,
+            name: name,
+            email: email,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        };
+        res.status(reply.status).send(response);
     })
         .catch(next);
 });
 // Post a new user
-// FIXME: Quando adicionar um usuário, deve verificar primeiro se ele já existe na base de dados
 router.post('/', function (req, res, next) {
-    req.eventHandler.publish('users_ch', {
+    eventHandler.publish('users_ch', {
         body: req.body,
         event: 'create',
     })
         .then(function (reply) {
-        req.eventHandler.publish('auth_ch', {
+        eventHandler.publish('auth_ch', {
             body: {
                 email: reply.payload.email,
                 password: reply.payload.password,
             },
             event: 'newuser'
         });
-        res.status(reply.status).send(reply.payload);
+        var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, password = _a.password, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
+        var response = {
+            _id: _id,
+            name: name,
+            email: email,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        };
+        res.status(reply.status).send(response);
     })
         .catch(next);
 });
@@ -104,7 +131,7 @@ router.post('/:userId/images', function (req, res, next) { return __awaiter(void
                 form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
             });
         }
-        axios_1.default.post('http://localhost:3001/', form, { headers: form.getHeaders(), validateStatus: function (status) { return status < 500; } })
+        axios_1.default.post(process.env.UPLOAD_HOST || '', form, { headers: form.getHeaders(), validateStatus: function (status) { return status < 500; } })
             .then(function (response) {
             res.status(response.status).send(response.data);
         })
@@ -114,23 +141,45 @@ router.post('/:userId/images', function (req, res, next) { return __awaiter(void
 }); });
 // Alter a user
 router.put('/:email', function (req, res, next) {
-    req.eventHandler.publish('users_ch', {
+    eventHandler.publish('users_ch', {
         body: { email: req.params.email, content: req.body },
         event: 'modify',
     })
         .then(function (reply) {
-        res.status(reply.status).send(polish_1.default(reply));
+        var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, password = _a.password, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
+        var response = {
+            _id: _id,
+            name: name,
+            email: email,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        };
+        res.status(reply.status).send(response);
     })
         .catch(next);
 });
 // Delete a user
 router.delete('/:email', function (req, res, next) {
-    req.eventHandler.publish('users_ch', {
+    eventHandler.publish('users_ch', {
         body: { email: req.params.email },
         event: 'delete',
     })
         .then(function (reply) {
-        res.status(reply.status).send(polish_1.default(reply));
+        eventHandler.publish('auth_ch', {
+            body: {
+                email: reply.payload.email,
+            },
+            event: 'removeuser'
+        });
+        var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, password = _a.password, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
+        var response = {
+            _id: _id,
+            name: name,
+            email: email,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        };
+        res.status(reply.status).send(response);
     })
         .catch(next);
 });

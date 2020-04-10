@@ -43,39 +43,47 @@ var express_1 = __importDefault(require("express"));
 var axios_1 = __importDefault(require("axios"));
 var form_data_1 = __importDefault(require("form-data"));
 var polish_1 = __importDefault(require("../utils/polish"));
+var events_1 = __importDefault(require("../events"));
 var router = express_1.default.Router();
+var eventHandler = events_1.default.getInstance();
 // Get all comments
 router.get('/', function (req, res, next) {
-    req.eventHandler.publish('comments_ch', {
+    eventHandler.publish('comments_ch', {
         body: {},
         event: 'list',
     })
-        .then(function (posts) { return __awaiter(void 0, void 0, void 0, function () {
-        var results;
+        .then(function (comments) { return __awaiter(void 0, void 0, void 0, function () {
+        var results, r;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, Promise.all(posts.payload.map(function (post) { return __awaiter(void 0, void 0, void 0, function () {
+                case 0: return [4 /*yield*/, Promise.all(comments.payload.map(function (comment) { return __awaiter(void 0, void 0, void 0, function () {
                         return __generator(this, function (_a) {
                             switch (_a.label) {
-                                case 0: return [4 /*yield*/, req.eventHandler.publish('users_ch', {
-                                        body: { query: { _id: post.userId } },
+                                case 0: return [4 /*yield*/, eventHandler.publish('users_ch', {
+                                        body: { query: { _id: comment.userId } },
                                         event: 'list',
                                     })
                                         .then(function (_a) {
                                         var payload = _a.payload;
-                                        delete payload[0].password;
-                                        delete payload[0].active;
-                                        post.user = payload[0];
-                                        return post;
+                                        if (payload.length === 0)
+                                            return;
+                                        comment.user = polish_1.default(payload[0]);
                                     })
                                         .catch(next)];
-                                case 1: return [2 /*return*/, _a.sent()];
+                                case 1:
+                                    _a.sent();
+                                    return [2 /*return*/, comment];
                             }
                         });
                     }); }))];
                 case 1:
                     results = _a.sent();
-                    res.status(posts.status).send(polish_1.default(results));
+                    r = [];
+                    results.forEach(function (e) {
+                        if (e)
+                            r.push(e);
+                    });
+                    res.status(comments.status).send(r);
                     return [2 /*return*/];
             }
         });
@@ -84,7 +92,7 @@ router.get('/', function (req, res, next) {
 });
 // Get post by ID
 router.get('/:id', function (req, res, next) {
-    req.eventHandler.publish('comments_ch', {
+    eventHandler.publish('comments_ch', {
         body: { _id: req.params.id },
         event: 'list',
     })
@@ -96,7 +104,7 @@ router.get('/:id', function (req, res, next) {
 // Create a new comment
 router.post('/', function (req, res, next) {
     var form = new form_data_1.default();
-    req.eventHandler.publish('posts_ch', {
+    eventHandler.publish('posts_ch', {
         body: { query: { _id: req.body.postId } },
         event: 'list',
     })
@@ -104,14 +112,14 @@ router.post('/', function (req, res, next) {
         var comment;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, req.eventHandler.publish('comments_ch', {
+                case 0: return [4 /*yield*/, eventHandler.publish('comments_ch', {
                         body: req.body,
                         event: 'create',
                     })];
                 case 1:
                     comment = _a.sent();
                     console.log(comment);
-                    req.eventHandler.publish('posts_ch', {
+                    eventHandler.publish('posts_ch', {
                         body: { _id: req.body.postId, commentId: comment.payload._id },
                         event: 'addcomment',
                     })
@@ -148,7 +156,7 @@ router.put('/:id', function (req, res, next) {
     axios_1.default.post('http://localhost:3001/?id' + req.params.id, form, { headers: form.getHeaders(), validateStatus: function (status) { return status < 500; } })
         .then(function (response) {
         req.body.media = response.data;
-        req.eventHandler.publish('comments_ch', {
+        eventHandler.publish('comments_ch', {
             body: { _id: req.params.id, content: req.body },
             event: 'modify',
         })
@@ -161,7 +169,7 @@ router.put('/:id', function (req, res, next) {
 });
 // Delete a post
 router.delete('/:id', function (req, res, next) {
-    req.eventHandler.publish('comments_ch', {
+    eventHandler.publish('comments_ch', {
         body: { _id: req.params.id },
         event: 'delete',
     })
@@ -172,7 +180,7 @@ router.delete('/:id', function (req, res, next) {
 });
 // Subscribe to a post
 router.post('/:id', function (req, res, next) {
-    req.eventHandler.publish('comments_ch', {
+    eventHandler.publish('comments_ch', {
         body: { _id: req.params.id },
         event: 'subscribe',
     })

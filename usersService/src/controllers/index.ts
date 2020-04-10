@@ -6,7 +6,9 @@ const User = Database.getInstance().getModel();
 
 export default {
     async create(body : IUserCreateOptions) : Promise<IUser | void> {
+        body.email = body.email.trim();
         const findQuery = await User.findOne({email: body.email, active : false}).exec();
+
         if(findQuery) {
             findQuery.set({active: true, password: body.password});
 

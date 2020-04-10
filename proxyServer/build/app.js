@@ -19,7 +19,6 @@ var compression_1 = __importDefault(require("compression"));
 var cors_1 = __importDefault(require("cors"));
 var http = __importStar(require("http"));
 var routes_1 = __importDefault(require("./routes"));
-require("sucrase/register/ts");
 dotenv.config();
 var app = express_1.default();
 var server = http.createServer(app);

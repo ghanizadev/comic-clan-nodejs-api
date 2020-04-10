@@ -49,14 +49,12 @@ router.get('/', (req, res, next) => {
 
                                 if(payload.length === 0) return;
                                 comment.user = polish(payload.shift());
-                                // delete comment.userId;
+                                delete comment.userId;
                                 return comment;
                             })
                             .catch(next);
                         })
                     )
-
-                    console.log(comments)
                     post.comments = comments;
                 })
                 .catch(next);

@@ -14,7 +14,7 @@ export default class Logger {
     }
 
     private create () : winston.Logger {
-        const { printf, json, timestamp, splat } = winston.format;
+        const { printf, json, timestamp, splat, colorize, prettyPrint } = winston.format;
 
         const ip = () : string => {
             const interfaces = os.networkInterfaces()
@@ -36,9 +36,23 @@ export default class Logger {
             ]
         });
 
-        if (process.env.NODE_ENV !== 'production') {
+        winston.addColors({
+            error: 'red',
+            warn: 'yellow',
+            info: 'grey',
+            debug: 'green'
+        });
+
+        if (process.env.NODE_ENV !== 'test') {
             logger.add(new winston.transports.Console({
-                format: winston.format.combine(timestamp(), consoleFormat, splat())
+                format: winston.format.combine(
+                    timestamp(),
+                    consoleFormat,
+                    splat(),
+                    colorize({
+                        all: true
+                    }),
+                ),
             }));
         }
 

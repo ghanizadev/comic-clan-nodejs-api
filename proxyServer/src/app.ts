@@ -11,7 +11,6 @@ import io from 'socket.io';
 import routes from './routes';
 import logger from './utils/logger';
 
-import "sucrase/register/ts";
 dotenv.config();
 
 const app = express();

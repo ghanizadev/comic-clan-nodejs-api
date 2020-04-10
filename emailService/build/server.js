@@ -42,9 +42,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var dotenv_1 = __importDefault(require("dotenv"));
 var controllers_1 = __importDefault(require("./controllers"));
 var index_1 = __importDefault(require("./events/index"));
+dotenv_1.default.config();
 var eventHandler = new index_1.default(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'email_ch');
 eventHandler.listen();
-dotenv_1.default.config();
 var run = function () { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         try {
