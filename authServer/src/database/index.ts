@@ -1,4 +1,5 @@
 import redis, { RedisClient } from 'redis';
+import {logger} from '../utils/logger';
 
 export interface Message {
     id ?: string;
@@ -10,7 +11,7 @@ export interface Message {
 
 export default class Database {
     private static instance : Database;
-    private db !: RedisClient;
+    public database !: RedisClient;
 
     private constructor() {}
 
@@ -22,7 +23,7 @@ export default class Database {
 
     private retry_strategy(options : any) : number | Error {
         if (options.attempt > 30) {
-            console.log('Redis server is not responding...');
+            logger.info('Redis server is not responding...');
             process.exit(1);
         }
         if (options.error && options.error.code === "ECONNREFUSED") {
@@ -31,23 +32,23 @@ export default class Database {
         return 1000;
     }
 
-    connect(connectionString : string, databaseName : string) : Promise<RedisClient>{
-        return new Promise((res, rej) => {
+    private setDb (db : RedisClient){
+        this.database = db;
+    }
+
+    public async connect(connectionString : string, databaseName : string) : Promise<RedisClient>{
+        return new Promise((res : (database : RedisClient) => void, rej : any) => {
             const {retry_strategy} = this;
+
+            const r = redis.createClient({url: connectionString, retry_strategy});
     
-            let r =redis.createClient({url: connectionString, retry_strategy});
-            this.db = r;
+            r.once('error', rej);
     
             r.once('connect', () => {
+                logger.info('Redis connected!');
                 res(r);
             })
 
-            r.once('error', () => rej());
         })
-
-    }
-
-    public get() {
-        return this.db;
     }
 }

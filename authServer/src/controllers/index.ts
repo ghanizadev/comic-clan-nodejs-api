@@ -4,7 +4,8 @@ import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
 import { HTTPError } from '../errors';
-import Database from '../database';
+import { RedisClient } from 'redis';
+import { logger } from '../utils/logger';
 
 export interface IAuthorize {
     username ?: string;
@@ -14,14 +15,18 @@ export interface IAuthorize {
     scope ?: string;
 }
 
-const db = Database.getInstance().get();
+const accessKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'private-access.pem')).toString().trim();
+const accessKeyPub = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'public-access.crt')).toString().trim();
+const refreshKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'private-refresh.pem')).toString().trim();
+const refreshKeyPub = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'public-refresh.crt')).toString().trim();
 
 
-const issueNewToken = async (username: string, password: string, next : NextFunction) => {
+const issueNewToken = async (db : RedisClient, username: string, password: string, next : NextFunction) => {
+    
     return await new Promise((res, rej) => {
         db.hget(username, 'password', (error, value) => {
             if(error) rej(error)
-            if(!value) rej('not_found');
+            if(!value) rej({error: 'invalid_client', error_description: 'Please check your username and password', status: 401});
             res(value);
         });
     })
@@ -29,11 +34,9 @@ const issueNewToken = async (username: string, password: string, next : NextFunc
         const hash = await bcrypt.hash(password, process.env.PASSWORD_SALT || 8);
 
         if(hash === value) {
-            var accessKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'access_token_private.pem')).toString();
-            var refreshKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'refresh_token_private.pem')).toString();
+            const access_token = jwt.sign({ username }, {key: accessKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', expiresIn: '1h' })
+            const refresh_token = jwt.sign({ username }, {key: refreshKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256'});
 
-            const access_token = jwt.sign({ username }, accessKey, { algorithm: 'RS256', expiresIn: '1h',  })
-            const refresh_token = jwt.sign({ username }, refreshKey, { algorithm: 'RS256'});
             db.hset(username, 'refreshToken', refresh_token);
 
             return {
@@ -41,27 +44,28 @@ const issueNewToken = async (username: string, password: string, next : NextFunc
                 access_token,
                 expires_in: 60 * 60,
                 refresh_token,
-                scope: 'feed;profile;post;comment'
+                scope: 'feed;profile;post;comment;'
             }
         }else {
-            throw new HTTPError('unauthorized_client', 'user does not exists, it had been deleted or username and password does not match', 401);
+            throw new HTTPError('unauthorized_client', 'User does not exists, it had been deleted or username and password does not match', 401);
         }
-    }).catch(next);
+    }).catch(e => {
+        console.log(e)
+        next(e);
+    });
 }
 
-const issueFromRefreshToken = async (token: string, next : NextFunction ) => {
+const issueFromRefreshToken = async (db : RedisClient, token: string, next : NextFunction ) => {
 
-    const accessKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'access_token_private.pem')).toString();
-    const refreshKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'refresh_token_private.pem')).toString();
-    let payload : IAuthorize;
+    let payload : any = {};
 
     return await new Promise((res : (v : string) => void, rej : (e : any) => void ) => {
-        payload = jwt.verify(token, refreshKey, { algorithms : ['RS256']}) as IAuthorize;
-        console.log(payload)
+
+        payload = jwt.verify(token, refreshKeyPub, {algorithms: ['RS256', 'RS512']})
 
         db.hget(payload.username || '', 'refreshToken', (error: any, value: string) => {
             if(error) rej(error)
-            if(!value) rej('not_found');
+            if(!value) rej({error: 'invalid_client', error_description: 'Invalid token, this token was issued already. If this problem persists, please, call administrator', status: 401});
             res(value);
         });
     })
@@ -69,8 +73,8 @@ const issueFromRefreshToken = async (token: string, next : NextFunction ) => {
         if(value === token) {
             const { username } = payload;
 
-            const access_token = jwt.sign({ username }, accessKey, { algorithm: 'RS256', expiresIn: '1h',  })
-            const refresh_token = jwt.sign({ username }, refreshKey, { algorithm: 'RS256'});
+            const access_token = jwt.sign({ username }, {key: accessKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', expiresIn: '1h',  })
+            const refresh_token = jwt.sign({ username }, {key: refreshKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256'});
             db.hset(username || '', 'refreshToken', refresh_token);
 
             return {
@@ -78,12 +82,15 @@ const issueFromRefreshToken = async (token: string, next : NextFunction ) => {
                 access_token,
                 expires_in: 60 * 60,
                 refresh_token,
-                scope: 'feed;profile;post;comment'
+                scope: 'feed;profile;post;comment;'
             }
         }else {
-            throw new HTTPError('unauthorized_client', 'username and password does not match', 401);
+            throw new HTTPError('unauthorized_client', 'Username and password does not match', 401);
         }
-    }).catch(next);
+    }).catch(e => {
+        console.log(e)
+        next(e);
+    });
 }
 
 export default {
@@ -103,23 +110,25 @@ export default {
                 const [clientId, clientSecret] = auth.split(':');
 
                 await new Promise((res : (v : string) => void, rej : (e : any) => void ) => {
-                    db.hget('clients', clientId, (error : any, value : string) => {
+                    req.database.hget('clients', clientId, (error : any, value : string) => {
                         if(error) rej(error)
-                        if(!value) rej('not_found');
+                        if(!value) rej({error: 'invalid_client', error_description: "client credentials are invalid or it does not match", status: 401});
                         res(value);
                     });
                 })
                 .then(value => {
-                    if(value !== clientSecret) throw new HTTPError('invalid_client', 'client id and client secret does not match', 401);
+                    if(value !== clientSecret) throw new HTTPError('invalid_client', 'client credentials are invalid or it does not match', 401);
                 })
-
+                .catch(e => {
+                    throw new HTTPError(e);
+                })
             }
 
             if(req.body?.grant_type === 'refresh_token') {
-                const token = await issueFromRefreshToken(req.body.refresh_token, next);
+                const token = await issueFromRefreshToken(req.database, req.body.refresh_token, next);
                 res.status(201).send(token);
             } else if (req.body?.grant_type === 'password') {
-                const token = await issueNewToken(req.body.username, req.body.password, next);
+                const token = await issueNewToken(req.database, req.body.username, req.body.password, next);
                 res.status(201).send(token);
             } else if(['authorization_code', 'device_code', 'client_credentials'].includes(req.body?.grant_type)) {
                 throw new HTTPError('unsupported_grant_type', 'supproted grant types are: password; refresh_token');
@@ -131,46 +140,8 @@ export default {
             next(e);
         }
     },
-    async refresh (req : Request, res : Response, next : NextFunction) {
-        try{
-            if(req.headers?.["content-type"] !== 'application/x-www-form-urlencoded') {
-                throw new HTTPError('invalid_request', 'request is malformed, it must be application/x-www-form-urlencoded');
-            }
-            await new Promise((res, rej) => {
-                db.hget(req.body.username, 'password', (error, value) => {
-                    if(error) rej(error)
-                    if(!value) rej('not_found');
-                    res(value);
-                });
-            })
-            .then(async value => {
-                const hash = await bcrypt.hash(req.body.password, process.env.PASSWORD_SALT || 8);
-
-                if(hash === value) {
-                    var accessKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'access_token_private.pem')).toString();
-                    var refreshKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'refresh_token_private.pem')).toString();
-
-                    const access_token = jwt.sign({ username: req.body.username }, accessKey, { algorithm: 'RS256', expiresIn: '1h',  })
-                    const refresh_token = jwt.sign({ username: req.body.username }, refreshKey, { algorithm: 'RS256'});
-                    db.hset(req.body.username, 'refreshToken', refresh_token);
-
-                    res.status(201).send({
-                        token_type: 'bearer',
-                        access_token,
-                        expires_in: 60 * 60,
-                        refresh_token,
-                        scope: 'feed;profile;post;comment'
-                    });
-                }else {
-                    res.status(401).send();
-                }
-            }).catch(console.error);
-        }catch(e){
-            next(e);
-        }
-    },
     async revoke (req : Request, res : Response, next : NextFunction) {
-        return db.hset(req.body.username, 'refreshToken', '', (error, value) => {
+        return req.database.hset(req.body.username, 'refreshToken', '', (error, value) => {
             if(error) return res.status(500).send(error);
             if(!value) return res.status(404).send('not_found');
             return res.sendStatus(204);

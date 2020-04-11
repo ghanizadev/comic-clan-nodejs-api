@@ -5,7 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comic Clan Management Page</title>
 </head>
+<style>
+    * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    .background {
+        background-color: #333;
+        height: 100vh;
+        width: 100vw;
+    }
+    .overlay {
+        width: 50vw;
+        height: 100vh;
+        position: absolute;
+        background-color: #F15454;
+        transition: all .25s ease-in-out;
+    }
+
+    .open {
+        left: 0;
+    }
+
+    .close {
+        right: 0;
+    }
+</style>
 <body>
-    ]<h1>Hellow World!</h1>
+    <section class="overlay open">
+        <h1>Painel</h1>
+    </section>
+    <div class="background">
+        <h1>Login</h1>
+    </div>
+    <script>
+        document.querySelector('.overlay').addEventListener("click", () => {
+            const element = document.querySelector('.overlay');
+    
+            if(element.className === '.overlay.open') element.setAttribute('id', 'close');
+            else element.setAttribute('id', 'open');
+        });
+    </script>
 </body>
 </html>

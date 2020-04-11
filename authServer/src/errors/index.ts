@@ -1,24 +1,27 @@
-// import logger from '../utils/logger';
-import express from 'express';
+import { logger } from '../utils/logger';
 
 export class HTTPError extends Error {
-    public error : string = 'internal_server_error';
-    // tslint:disable-next-line: variable-name
-    public error_description : string = 'something went bad, check logs for further information';
-    public status : number = 500;
-    private level : string = 'error';
+    public error : string;
+    public error_description : string;
+    public status : number;
+    private level : string;
 
-    // tslint:disable-next-line: variable-name
-    constructor(error : string, error_description ?: string, status ?: number){
+    constructor(error ?: string | any, error_description ?: string, status ?: number){
         super(error);
-        this.error = error;
-        if(error_description) this.error_description = error_description;
-        if(status) this.status = status;
+
+        if(error.error) this.error = error.error;
+        else this.error = error.message || error || 'internal_server_error';
+
+        if(error.error_description) this.error_description = error.error_description;
+        else this.error_description = error_description || 'something went bad, check logs for further information';
+
+        if(error.status) this.status = error.status;
+        else this.status = status || 500;
 
         if(this.status < 300) this.level = 'info';
         else if(this.status < 500) this.level = 'warn';
         else this.level = 'error'
 
-        console.log(this.level,`(${status}) ERROR: "${error}", ERROR_DESCRIPTION: "${error_description}"`);
+        logger.log(this.level,`(${status}) ERROR: "${error}", ERROR_DESCRIPTION: "${error_description}"`);
     }
 }

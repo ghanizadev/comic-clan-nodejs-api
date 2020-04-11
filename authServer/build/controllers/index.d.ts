@@ -7,8 +7,8 @@ export interface IAuthorize {
     scope?: string;
 }
 declare const _default: {
-    authorize(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response<any>, next: NextFunction): Promise<void>;
-    refresh(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response<any>, next: NextFunction): Promise<void>;
-    revoke(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response<any>, next: NextFunction): Promise<boolean>;
+    authorize(req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("express-serve-static-core").Query>, res: Response<any>, next: NextFunction): Promise<void>;
+    refresh(req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("express-serve-static-core").Query>, res: Response<any>, next: NextFunction): Promise<void>;
+    revoke(req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("express-serve-static-core").Query>, res: Response<any>, next: NextFunction): Promise<boolean>;
 };
 export default _default;

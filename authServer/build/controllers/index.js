@@ -44,9 +44,7 @@ var bcrypt_1 = __importDefault(require("bcrypt"));
 var fs_1 = __importDefault(require("fs"));
 var path_1 = __importDefault(require("path"));
 var errors_1 = require("../errors");
-var database_1 = __importDefault(require("../database"));
-var db = database_1.default.getInstance().get();
-var issueNewToken = function (username, password, next) { return __awaiter(void 0, void 0, void 0, function () {
+var issueNewToken = function (db, username, password, next) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, new Promise(function (res, rej) {
@@ -54,7 +52,7 @@ var issueNewToken = function (username, password, next) { return __awaiter(void 
                         if (error)
                             rej(error);
                         if (!value)
-                            rej('not_found');
+                            rej({ error: 'client_invalid', error_description: 'please check your username and password', status: 401 });
                         res(value);
                     });
                 })
@@ -62,7 +60,9 @@ var issueNewToken = function (username, password, next) { return __awaiter(void 
                     var hash, accessKey, refreshKey, access_token, refresh_token;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
-                            case 0: return [4 /*yield*/, bcrypt_1.default.hash(password, process.env.PASSWORD_SALT || 8)];
+                            case 0:
+                                console.log(value);
+                                return [4 /*yield*/, bcrypt_1.default.hash(password, process.env.PASSWORD_SALT || 8)];
                             case 1:
                                 hash = _a.sent();
                                 if (hash === value) {
@@ -85,12 +85,14 @@ var issueNewToken = function (username, password, next) { return __awaiter(void 
                                 return [2 /*return*/];
                         }
                     });
-                }); }).catch(next)];
+                }); }).catch(function (e) {
+                    next(e);
+                })];
             case 1: return [2 /*return*/, _a.sent()];
         }
     });
 }); };
-var issueFromRefreshToken = function (token, next) { return __awaiter(void 0, void 0, void 0, function () {
+var issueFromRefreshToken = function (db, token, next) { return __awaiter(void 0, void 0, void 0, function () {
     var accessKey, refreshKey, payload;
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -149,31 +151,34 @@ exports.default = {
                         auth = Buffer.from(auth, 'base64').toString();
                         _g = auth.split(':'), clientId_1 = _g[0], clientSecret_1 = _g[1];
                         return [4 /*yield*/, new Promise(function (res, rej) {
-                                db.hget('clients', clientId_1, function (error, value) {
+                                req.database.hget('clients', clientId_1, function (error, value) {
                                     if (error)
                                         rej(error);
                                     if (!value)
-                                        rej('not_found');
+                                        rej({ error: 'invalid_client', error_description: "client credentials are invalid or it does not match", status: 401 });
                                     res(value);
                                 });
                             })
                                 .then(function (value) {
                                 if (value !== clientSecret_1)
-                                    throw new errors_1.HTTPError('invalid_client', 'client id and client secret does not match', 401);
+                                    throw new errors_1.HTTPError('invalid_client', 'client credentials are invalid or it does not match', 401);
+                            })
+                                .catch(function (e) {
+                                throw new errors_1.HTTPError(e);
                             })];
                     case 2:
                         _h.sent();
                         _h.label = 3;
                     case 3:
                         if (!(((_d = req.body) === null || _d === void 0 ? void 0 : _d.grant_type) === 'refresh_token')) return [3 /*break*/, 5];
-                        return [4 /*yield*/, issueFromRefreshToken(req.body.refresh_token, next)];
+                        return [4 /*yield*/, issueFromRefreshToken(req.database, req.body.refresh_token, next)];
                     case 4:
                         token = _h.sent();
                         res.status(201).send(token);
                         return [3 /*break*/, 8];
                     case 5:
                         if (!(((_e = req.body) === null || _e === void 0 ? void 0 : _e.grant_type) === 'password')) return [3 /*break*/, 7];
-                        return [4 /*yield*/, issueNewToken(req.body.username, req.body.password, next)];
+                        return [4 /*yield*/, issueNewToken(req.database, req.body.username, req.body.password, next)];
                     case 6:
                         token = _h.sent();
                         res.status(201).send(token);
@@ -189,6 +194,7 @@ exports.default = {
                     case 8: return [3 /*break*/, 10];
                     case 9:
                         e_1 = _h.sent();
+                        console.log(e_1);
                         next(e_1);
                         return [3 /*break*/, 10];
                     case 10: return [2 /*return*/];
@@ -209,7 +215,7 @@ exports.default = {
                             throw new errors_1.HTTPError('invalid_request', 'request is malformed, it must be application/x-www-form-urlencoded');
                         }
                         return [4 /*yield*/, new Promise(function (res, rej) {
-                                db.hget(req.body.username, 'password', function (error, value) {
+                                req.database.hget(req.body.username, 'password', function (error, value) {
                                     if (error)
                                         rej(error);
                                     if (!value)
@@ -229,7 +235,7 @@ exports.default = {
                                                 refreshKey = fs_1.default.readFileSync(path_1.default.resolve(__dirname, '..', 'keys', 'refresh_token_private.pem')).toString();
                                                 access_token = jsonwebtoken_1.default.sign({ username: req.body.username }, accessKey, { algorithm: 'RS256', expiresIn: '1h', });
                                                 refresh_token = jsonwebtoken_1.default.sign({ username: req.body.username }, refreshKey, { algorithm: 'RS256' });
-                                                db.hset(req.body.username, 'refreshToken', refresh_token);
+                                                req.database.hset(req.body.username, 'refreshToken', refresh_token);
                                                 res.status(201).send({
                                                     token_type: 'bearer',
                                                     access_token: access_token,
@@ -260,7 +266,7 @@ exports.default = {
     revoke: function (req, res, next) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, db.hset(req.body.username, 'refreshToken', '', function (error, value) {
+                return [2 /*return*/, req.database.hset(req.body.username, 'refreshToken', '', function (error, value) {
                         if (error)
                             return res.status(500).send(error);
                         if (!value)

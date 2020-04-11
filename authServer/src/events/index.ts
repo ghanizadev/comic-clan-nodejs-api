@@ -43,7 +43,6 @@ export default class EventHandler {
         this.consumer = redis.createClient({url: connectionString, retry_strategy});
 
         this.consumer.once("connect", () => {
-            console.log("Connected to Redis!")
             this.consumer.subscribe(this.channel);
 
             this.consumer.on('message', (_, message ) => {

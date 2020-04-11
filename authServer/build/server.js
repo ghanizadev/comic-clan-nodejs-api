@@ -48,16 +48,20 @@ var fs_1 = __importDefault(require("fs"));
 var helmet_1 = __importDefault(require("helmet"));
 var path_1 = __importDefault(require("path"));
 var ddos_1 = __importDefault(require("./middlewares/ddos"));
+var dbInjector_1 = __importDefault(require("./middlewares/dbInjector"));
 var events_1 = __importDefault(require("./events"));
 var database_1 = __importDefault(require("./database"));
+var logger_1 = require("./utils/logger");
 dotenv_1.default.config();
 var run = function () { return __awaiter(void 0, void 0, void 0, function () {
     var eventHandler, conn, db, app, options;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
+                logger_1.logger.info("Initializing...");
                 eventHandler = events_1.default.getInstance();
                 eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'auth_ch');
+                logger_1.logger.info("Connecting to Redis server...");
                 conn = database_1.default.getInstance();
                 return [4 /*yield*/, conn.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'auth')];
             case 1:
@@ -77,9 +81,10 @@ var run = function () { return __awaiter(void 0, void 0, void 0, function () {
                 app.use(body_parser_1.default.json());
                 app.use(helmet_1.default());
                 app.use(ddos_1.default(db));
+                app.use(dbInjector_1.default(db));
                 app.use('/oauth', routes_1.default);
                 https_1.default.createServer(options, app).listen(process.env.PORT || 3333);
-                console.log("started at ", process.env.PORT || 3333);
+                logger_1.logger.info("Auth server started at " + (process.env.PORT || 3333));
                 return [2 /*return*/];
         }
     });

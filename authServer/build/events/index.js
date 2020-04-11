@@ -30,7 +30,6 @@ var EventHandler = /** @class */ (function () {
         this.channel = channel;
         this.consumer = redis_1.default.createClient({ url: connectionString, retry_strategy: retry_strategy });
         this.consumer.once("connect", function () {
-            console.log("Connected to Redis!");
             _this.consumer.subscribe(_this.channel);
             _this.consumer.on('message', function (_, message) {
                 var msg = JSON.parse(message);

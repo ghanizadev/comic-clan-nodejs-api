@@ -4,6 +4,7 @@ import { logger } from './utils/logger';
 import EventHandler from './events';
 import redis from 'redis';
 import uuid from 'uuid/v4';
+import https from 'https';
 
 const run = async () => {
     await EventHandler.getInstance().connect(process.env.REDIS_SERVER || 'redis://localhost:6379', 'proxy_ch');
@@ -23,7 +24,7 @@ const run = async () => {
     db.once('connect', () => {
         logger.info('Checking from credentials...')
 
-        db.hgetall('default_client', (error, keys) => {
+        db.hgetall('clients', (error, keys) => {
             if (error) return;
 
             const auth: { id: string; secret: string; } = {id: '', secret:''};
@@ -44,7 +45,7 @@ const run = async () => {
                     logger.warn(`CLIENT_ID=${clientID}`);
                     logger.warn(`CLIENT_SECRET=${clientSecret}`);
 
-                    db.hset('default_client', clientID, clientSecret);
+                    db.hset('clients', clientID, clientSecret);
                 }
             } else {
                 logger.warn('Generating temporary client credentials...');
@@ -54,7 +55,7 @@ const run = async () => {
                 logger.warn(`CLIENT_ID=${clientID}`);
                 logger.warn(`CLIENT_SECRET=${clientSecret}`);
 
-                db.hset('default_client', clientID, clientSecret);
+                db.hset('clients', clientID, clientSecret);
             }
 
 

@@ -3,14 +3,16 @@ import controller from '../controllers'
 import fs from 'fs';
 import path from 'path';
 import errorHandler from '../middlewares/errorHandler';
+import convert from 'pem-jwk';
 
 const router = express.Router();
 
 router.post('/token', controller.authorize);
 router.post('/revoke', controller.revoke);
-router.get('/token_key', (req, res, next) => {
-    const file = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'access_token_pub.crt')).toString();
-    res.status(201).send(file)
+router.get('/signature', (req, res, next) => {
+    const file = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'public-access.pem'), 'ascii')
+    const jwk = convert.pem2jwk(file);
+    res.status(201).send(jwk)
 });
 
 router.use(errorHandler);
