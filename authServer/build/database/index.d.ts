@@ -4,6 +4,7 @@ export interface Message {
     event: string;
     from?: string;
     body: any;
+    user ?: any;
     replyTo?: string;
 }
 export default class Database {

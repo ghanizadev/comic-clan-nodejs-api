@@ -1,5 +1,5 @@
 import {Request, Response, NextFunction} from 'express';
-import {HTTPError} from '../errors';
+import HTTPError from '../errors';
 import { logger } from '../utils/logger';
 
 export default (err : HTTPError | any, req : Request, res : Response, next : NextFunction) => {

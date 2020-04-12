@@ -5,6 +5,8 @@ import EventHandler from './events';
 import redis from 'redis';
 import uuid from 'uuid/v4';
 import https from 'https';
+import fs from 'fs';
+import path from "path";
 
 const run = async () => {
     await EventHandler.getInstance().connect(process.env.REDIS_SERVER || 'redis://localhost:6379', 'proxy_ch');
@@ -58,9 +60,12 @@ const run = async () => {
                 db.hset('clients', clientID, clientSecret);
             }
 
+            const options = {
+                key: fs.readFileSync(path.resolve(__dirname, 'keys', 'server.pem')),
+                cert: fs.readFileSync(path.resolve(__dirname, 'keys', 'server.crt'))
+            }
 
-
-            app.listen(process.env.PORT || 3000, () => {
+            https.createServer(options, app).listen(process.env.PORT || 3000, () => {
                 logger.info(`Server started at port ${process.env.PORT || 3000}`);
             });
         });

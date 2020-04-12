@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { HTTPError } from '../errors';
+import HTTPError from '../errors';
 import FormData from 'form-data';
 import logger from '../utils/logger';
 import polish from '../utils/polish'
@@ -90,6 +90,7 @@ router.get('/:id', (req, res, next) => {
 router.post('/', (req, res, next) => {
     eventHandler.publish('posts_ch', {
         body: req.body,
+        user: req.user,
         event: 'create',
     })
     .then(reply => {
@@ -101,7 +102,7 @@ router.post('/', (req, res, next) => {
 // Alter a post
 router.put('/:id', (req, res, next) => {
     eventHandler.publish('posts_ch', {
-        body: {_id : req.params.id, content: req.body},
+        body: {_id : req.params.id, content: req.body, user: req.user},
         event: 'modify',
     })
     .then(reply => {
@@ -113,7 +114,7 @@ router.put('/:id', (req, res, next) => {
 // Delete a post
 router.delete('/:id', (req, res, next) => {
     eventHandler.publish('posts_ch', {
-        body: {_id : req.params.id},
+        body: {id : req.params.id, user: req.user},
         event: 'delete',
     })
     .then(reply => {

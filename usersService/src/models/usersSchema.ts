@@ -53,8 +53,8 @@ UserSchema.pre('save', async function(next) {
 });
 
 UserSchema.methods = {
-    compareHash(hash: string) {
-        return bcrypt.compare(hash, this.password);
+    async compareHash(password: string) {
+        return bcrypt.compare(password, this.password);
     },
 };
 

@@ -6,47 +6,175 @@
     <title>Comic Clan Management Page</title>
 </head>
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;500&display=swap');
     * {
         padding: 0;
         margin: 0;
         box-sizing: border-box;
+        font-family: 'Roboto', sans-serif;
+        color: #fdfdfd;
     }
 
     .background {
         background-color: #333;
         height: 100vh;
         width: 100vw;
+        display: flex;
+        flex-direction: row;
     }
-    .overlay {
+
+    div #left, #right {
         width: 50vw;
         height: 100vh;
-        position: absolute;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    div #left {
         background-color: #F15454;
-        transition: all .25s ease-in-out;
+        background-image: url('./bg.png');
     }
 
-    .open {
+    div #left section {
+        height: 65%;
+        width: 80%;
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        flex-direction: column;
+    }
+
+    div #right form {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin: 10px;
+    }
+
+    div #right form #title{
+        color: #F15454;
+        align-self: flex-start;
+        font-size: 32px;
+        font-weight: 400;
+        margin-bottom: 25px;
+    }
+
+
+    div #left section #panel-title{
+        font-size: 32px;
+        font-weight: 500;
+    }
+
+    div #left footer a{
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    div #left{
+        position: relative;
+    }
+
+    div #left section p{
+        font-size: 22px;
+        font-weight: 400;
+    }
+
+    div #left footer{
+        position: absolute;
+        bottom: 0;
         left: 0;
+        right: 0;
+        padding: 25px;
+        display: flex;
+        flex-direction: column;
     }
 
-    .close {
-        right: 0;
+    a {
+        color:#fdfdfd;
+        margin-left: 5px;
+    }
+
+    #link {
+        display: flex;
+        align-items: center;
+        margin-top: 25px;
+    }
+
+    input {
+        font-family: 'Robot', sans-serif;
+    }
+    .input-container{
+        height: 40px;
+        width: 275px;
+        border: 2px solid #F15454;
+        background-color: transparent;
+        border-radius: 5px;
+        padding: 5px;
+        margin: 8px 0;
+        display: flex;
+    }
+
+    input[type=text]{
+        flex: 1;
+        margin-left: 5px;
+        border: none;
+        background-color: transparent;
+    }
+
+    input[type=submit]{
+        height: 40px;
+        width: 275px;
+        border: none;
+        color: #fdfdfd;
+        background-color: #F15454;
+        border-radius: 5px;
+        margin: 8px 0;
     }
 </style>
 <body>
-    <section class="overlay open">
-        <h1>Painel</h1>
-    </section>
     <div class="background">
-        <h1>Login</h1>
+        <div id="left">
+            <img src="./logo.svg" />
+            <section>
+                <h1 id="panel-title">Administration panel</h1>
+                <p>
+                    For further information, you can check the documentation about how to use this interface.
+                    If you prefer, contact the administrator.
+                </p>
+            </section>
+            <footer>
+                <div id="link" style="align-self: flex-end;">
+                    <img src="./file-text.svg" />
+                    <a href="./v3/api-docs">Documentation</a>
+                </div>
+                <div id="link" style="align-self: flex-end;">
+                    <img src="./mail.svg" />
+                    <a href="mailto:jf.melo6@gmail.com">Contact the administrator</a>
+                </div>
+            </footer>
+        </div>
+        <div id="right">
+            <form>
+                <h2 id="title">Login</h2>
+
+                <div class="input-container">
+                    <img src="./user.svg" />
+                    <input type="text" placeholder="Username" />
+                </div>
+                <div class="input-container">
+                    <img src="./key.svg" />
+                    <input type="text" placeholder="Password" />
+                </div>
+
+                <input type="submit"/>
+                <div id="link" style="align-self: flex-end;">
+                    <img src="./help-circle.svg" />
+                    <a href="./v3/api-docs">Problems to log in?</a>
+                </div>
+            </form>
+        </div>
     </div>
-    <script>
-        document.querySelector('.overlay').addEventListener("click", () => {
-            const element = document.querySelector('.overlay');
-    
-            if(element.className === '.overlay.open') element.setAttribute('id', 'close');
-            else element.setAttribute('id', 'open');
-        });
-    </script>
 </body>
 </html>

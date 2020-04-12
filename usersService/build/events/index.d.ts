@@ -3,6 +3,7 @@ export interface Message {
     event: string;
     from?: string;
     body: any;
+    user ?: any;
     replyTo?: string;
 }
 interface IResponseType {

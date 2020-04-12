@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 
-export class HTTPError extends Error {
+export default class HTTPError extends Error {
     public error : string;
     public error_description : string;
     public status : number;

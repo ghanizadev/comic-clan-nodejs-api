@@ -2,15 +2,17 @@ import * as express from 'express';
 import * as amqp from 'amqplib';
 import axios from 'axios';
 import FormData from 'form-data';
-import { HTTPError } from '../errors';
+import HTTPError from '../errors';
 import IUserDTO from '../DTO/userDTO';
 import EventHandler from '../events';
+import middlewares from '../middlewares/errorHandler'
+import authHandler from '../middlewares/authHandler'
 
 const router = express.Router();
 const eventHandler = EventHandler.getInstance();
 
 // Get all users
-router.get('/', (req, res, next) => {
+router.get('/', authHandler, (req, res, next) => {
     eventHandler.publish('users_ch', {
         body: {},
         event: 'list',
@@ -34,7 +36,7 @@ router.get('/', (req, res, next) => {
 })
 
 // Get by ID
-router.get('/:email', (req, res, next) => {
+router.get('/:email', authHandler, (req, res, next) => {
     eventHandler.publish('users_ch', {
         body: { email : req.params.email },
         event: 'list',
@@ -57,52 +59,54 @@ router.get('/:email', (req, res, next) => {
 
 // Post a new user
 router.post('/', (req, res, next) => {
-    eventHandler.publish('users_ch', {
-        body: req.body,
-        event: 'create',
-    })
-    .then(reply => {
-        eventHandler.publish('auth_ch', {
-            body: {
-                email: reply.payload.email,
-                password: reply.payload.password,
-            },
-            event: 'newuser'
+    if(!req.headers?.authorization || !req.headers.authorization.startsWith("Basic ")){
+        throw new HTTPError('invalid_request', 'Basic authentication must be provided', 400)
+    }
+
+    eventHandler.publish('auth_ch', {
+        body: {
+            email: req.body.email,
+            password: req.body.password,
+            credentials: req.headers.authorization
+        },
+        event: 'newuser'
+    }).then(() => {
+
+        eventHandler.publish('users_ch', {
+            body: req.body,
+            event: 'create',
         })
+        .then(reply => {
 
-        const {_id, name, email, password, createdAt, updatedAt} = reply.payload;
+            const {_id, name, email, createdAt, updatedAt} = reply.payload;
 
-        const response : IUserDTO = {
-            _id,
-            name,
-            email,
-            createdAt,
-            updatedAt
-        };
+            const response : IUserDTO = {
+                _id,
+                name,
+                email,
+                createdAt,
+                updatedAt
+            };
 
-        res.status(reply.status).send(response);
+            res.status(reply.status).send(response);
+
+        })
+        .catch(e => {
+            eventHandler.publish('auth_ch', {
+                body: {
+                    email: req.body.email,
+                },
+                event: 'removeuser'
+            })
+            next(e);
+        })
     })
     .catch(next)
-})
 
-// Post a new media for an user
-router.post('/:userId/images', async (req, res, next) => {
-    const form = new FormData();
-
-    if(Array.isArray(req.files)){;
-        req.files.forEach(file => {
-            form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
-        })
-    }
-    axios.post(process.env.UPLOAD_HOST || '', form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
-    .then(response => {
-        res.status(response.status).send(response.data)
-    })
-    .catch(e => { throw new HTTPError(e) })
-})
+});
 
 // Alter a user
-router.put('/:email', (req, res, next) => {
+router.put('/:email', authHandler,  (req, res, next) => {
     eventHandler.publish('users_ch', {
         body: {email : req.params.email, content: req.body},
         event: 'modify',
@@ -124,10 +128,16 @@ router.put('/:email', (req, res, next) => {
 })
 
 // Delete a user
-router.delete('/:email', (req, res, next) => {
+router.delete('/', authHandler,  (req, res, next) => {
+    if(req.headers["content-type"] !== 'application/x-www-form-urlencoded')
+        throw new HTTPError('invalid_request', 'Requests to delete user must be X-WWW-FORM-URLENCODED', 400);
+
+    if(!req.body.password)
+        throw new HTTPError('invalid_request', 'Missing password field', 400);
+
     eventHandler.publish('users_ch', {
-        body: {email : req.params.email},
-        event: 'delete',
+    body: {email : req.user.username, password: req.body.password},
+    event: 'delete',
     })
     .then(reply => {
         eventHandler.publish('auth_ch', {

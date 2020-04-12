@@ -1,0 +1,50 @@
+{
+    "security": {
+        "jwt": {
+            "access_token": {
+                "privateCertificate": "",
+                "publicCertificate": "",
+                "passphrase": ""
+            },
+            "refresh_token": {
+                "privateCertificate": "",
+                "publicCertificate": "",
+                "passphrase": ""
+            },
+            "expiring_time": 3600
+        },
+        "password": {
+            "regex": "",
+            "salt": ""
+        }
+    },
+    "general":{
+        "clients": [
+        ],
+        "administration":{
+            "username": "admin",
+            "passsword": "admin"
+        }
+    },
+    "email":{
+        "smtp": "",
+        "port": "",
+        "username": "",
+        "password": ""
+    },
+    "fileUploader": {
+        "garbageColector":{
+            "interval": 1,
+            "active": true
+        },
+        "allowedMedia":{
+            "formats": ["jpg", "png", "mp4", "gif"]
+        },
+        "posts":{
+            "maxFilesPerPost": 5
+        },
+        "comments":{
+            "maxFilesPerComment": 5
+        }
+    }
+}

@@ -14,10 +14,10 @@ import logger from './utils/logger';
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app);
 // io(server); Only authenticated users
 
 app.use(cors());
+app.options('*', cors())
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -35,4 +35,4 @@ app.get('/v3/api-docs', (_, res) => {
 
 app.use(routes);
 
-export default server;
+export default app;

@@ -1,60 +1,19 @@
 import Database from '../database';
 import HTTPError from '../errors';
+import { IPostDTO } from './IPostDTO';
+import { IPostCreateOptions } from './IPostCreateOptions';
+import { IPostDeleteOptions } from './IPostDeleteOptions';
+import { IPostAddCommentOptions } from "./IPostAddCommentOptions";
+import { IPostAddMediaOptions } from "./IPostAddMediaOptions";
+import { IPostModifyOptions } from "./IPostModifyOptions";
+import { IPostListOptions } from "./IPostListOptions";
 
 const Post = Database.getInstance().getModel();
 
-interface IPostDTO {
-    userId: string;
-    description : string;
-    body : string;
-    comments ?: string[];
-    media ?: string[];
-    updatedAt ?: string;
-    createdAt ?: string;
-    _id : string;
-    _v : number;
-}
-
-interface IPostCreateOptions {
-    userId: string;
-    description : string;
-    body : string;
-    media ?: string[];
-}
-
-interface IPostDeleteOptions {
-    _id : string;
-}
-interface IPostListOptions {
-    query : {
-        _id ?: string;
-    };
-    pagination ?: any;
-}
-
-interface IPostModifyOptions {
-    _id : string;
-    content : {
-        description : string;
-        body : string;
-        media ?: string[];
-    };
-}
-
-interface IPostAddCommentOptions {
-    _id : string;
-    commentId : string;
-}
-
-interface IPostAddMediaOptions {
-    id : string;
-    type: 'post' | 'comment';
-    file : string;
-}
-
 export default {
-    async create(body : IPostCreateOptions) : Promise<IPostDTO | null> {
-        const post = new Post(body);
+    async create(body : IPostCreateOptions, user : any) : Promise<IPostDTO | void> {
+        const save = {...body, userId:  user.id}
+        const post = new Post(save);
 
         return post.save()
         .then(async (doc) => {
@@ -83,9 +42,8 @@ export default {
     },
 
     async modify(modifiedPost : IPostModifyOptions) : Promise<IPostDTO> {
-        const queryPost = await Post.findOneAndUpdate({ _id: modifiedPost._id }, modifiedPost.content, {new : true}).exec();
+        const queryPost = await Post.findOne({ _id: modifiedPost._id }).exec();
 
-            
         if(!queryPost) {
             throw new HTTPError(
                 'not_found',
@@ -93,9 +51,20 @@ export default {
                 404
             );
         }
-            
-        const { _id, _v, userId, comments, description, body, media, createdAt, updatedAt } = queryPost;
 
+        if(queryPost.userId !== modifiedPost.user.id){
+            throw new HTTPError(
+                'invalid_request',
+                `user is not permited to modify or delete this request`,
+                403
+            );
+        }
+
+        queryPost.set(modifiedPost.content);
+
+        const doc = await queryPost.save();
+
+        const { _id, _v, userId, comments, description, body, media, createdAt, updatedAt } = doc;
 
         return {
             _id,
@@ -185,18 +154,28 @@ export default {
         }
     },
 
-    async delete(deleteOptions : IPostDeleteOptions) : Promise<IPostDTO | null> {
-        const queryPost = await Post.findOneAndDelete({ _id: deleteOptions._id }).exec();
+    async delete(deleteOptions : IPostDeleteOptions) : Promise<IPostDTO> {
+        const find = await Post.findById(deleteOptions.id).exec();
 
-        if(!queryPost) {
+        if(!find) {
             throw new HTTPError(
                 'not_found',
-                `post with id=${deleteOptions._id} does not exist or it is deleted`,
+                `post with id=${deleteOptions.id} does not exist or it is deleted`,
                 404
             );
         }
 
-        const { _id, _v, userId, comments, description, body, media, createdAt, updatedAt } = queryPost;
+        if(find.userId !== deleteOptions.user.id){
+            throw new HTTPError(
+                'invalid_request',
+                `user is not permited to modify or delete this request`,
+                403
+            );
+        }
+
+        await Post.findByIdAndDelete(deleteOptions.id).exec();
+
+        const { _id, _v, userId, comments, description, body, media, createdAt, updatedAt } = find;
 
         return {
             _id,

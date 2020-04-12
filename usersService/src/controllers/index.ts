@@ -53,9 +53,9 @@ export default {
         return queryUser;
     },
 
-    async delete(body : IUserDeleteOptions) : Promise<IUser | null> {
-        const queryUser = await User.findOneAndUpdate({ email: body.email, active : true }, {active : false}, {new : true}).exec();
-
+    async delete(body : IUserDeleteOptions) : Promise<IUser | void> {
+        const queryUser = await User.findOne({ email: body.email, active : true }).exec();
+        
         if(!queryUser) {
             throw new HTTPError(
                 'not_found',
@@ -63,6 +63,17 @@ export default {
                 404
             );
         }
+    
+        const check = await queryUser?.compareHash(body.password);
+
+        if(!check)
+            throw new HTTPError(
+                'unauthorized_client',
+                `Password does not match`,
+                401
+            );
+        
+        await User.findOneAndUpdate({ email: body.email, active : true }, {active : false}, {new : true}).exec();
 
         return queryUser;
     }
@@ -76,6 +87,7 @@ export interface IUserCreateOptions {
 
 export interface IUserDeleteOptions {
     email : string;
+    password : string;
 }
 export interface IUserListOptions {
     query : {

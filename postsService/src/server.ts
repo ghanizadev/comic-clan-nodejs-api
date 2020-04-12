@@ -25,7 +25,7 @@ const run = async () => {
 
   eventHandler.on('create', async (e, reply) => {
     try {
-      const doc = await controller.create(e.body);
+      const doc = await controller.create(e.body, e.user);
       if(doc)
         reply({payload: doc, status: 201});
       else
