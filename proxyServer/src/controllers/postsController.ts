@@ -10,7 +10,7 @@ const router = express.Router();
 const eventHandler = Eventhandler.getInstance();
 
 // Get all posts
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
     eventHandler.publish('posts_ch', {
         body: {},
         event: 'list',
@@ -37,25 +37,56 @@ router.get('/', (req, res, next) => {
                     event: 'list',
                 })
                 .then(async ({ payload }) => {
-                    if(payload.length === 0) return;
+                    post.comments = [];
 
-                    const comments = await Promise.all(
-                        payload.map(async (comment: { userId: string; user : any}) => {
+                    if(payload.length === 0) {
+                        return;
+                    }
+
+                    await Promise.all(
+                        payload.map(async (comment: { userId: string; user : any, comments: any[]}) => {
+
                             return await eventHandler.publish('users_ch', {
                                 body: {query: {_id: comment.userId}},
                                 event: 'list',
                             })
-                            .then(({ payload }) => {
+                            .then(async ({ payload }) => {
 
                                 if(payload.length === 0) return;
                                 comment.user = polish(payload.shift());
                                 delete comment.userId;
-                                return comment;
+
+                                await Promise.all(comment.comments.map(async sub => {
+                                    return await eventHandler.publish('comments_ch', {
+                                        body: {query: {_id: sub}},
+                                        event: 'list',
+                                    })
+                                    .then(async (subcomment) => {
+                                        comment.comments = [];
+                                        if(subcomment.payload.length === 0){
+                                            return;
+                                        };
+
+                                        return await eventHandler.publish('users_ch', {
+                                            body: {query: {_id: subcomment.payload[0].userId}},
+                                            event: 'list',
+                                        })
+                                        .then((user) => {
+                                            if(user.payload.length === 0) return;
+
+                                            subcomment.payload[0].user = polish(user.payload.shift());
+                                            comment.comments.push(subcomment.payload[0])
+                                        })
+                                        .catch(next)
+                                    })
+                                    .catch(next)
+                                }))
+
+                                post.comments.push(comment);
                             })
                             .catch(next);
                         })
                     )
-                    post.comments = comments;
                 })
                 .catch(next);
 
@@ -75,7 +106,7 @@ router.get('/', (req, res, next) => {
 })
 
 // Get post by ID
-router.get('/:id', (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
     eventHandler.publish('posts_ch', {
         body: { _id : req.params.id },
         event: 'list',
@@ -87,7 +118,7 @@ router.get('/:id', (req, res, next) => {
 })
 
 // Create a new post
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
     eventHandler.publish('posts_ch', {
         body: req.body,
         user: req.user,
@@ -111,8 +142,43 @@ router.put('/:id', (req, res, next) => {
     .catch(next)
 })
 
+// Comment to a post
+router.post('/:postId', async (req, res, next) => {
+    console.log(req.user)
+
+    eventHandler.publish('posts_ch', {
+        body: {query: {_id: req.params.postId}},
+        event: 'list',
+    })
+    .then(async ({payload}) => {
+
+        if(Array.isArray(payload) && payload.length === 0)
+            throw new HTTPError('invalid_request', 'Post was not found or it was deleted', 404)
+
+        const comment = await eventHandler.publish('comments_ch', {
+            body: {
+                body: req.body.body,
+                media: req.body.media,
+                rel: req.params.postId,
+                userId: req.user._id
+            },
+            event: 'create',
+        })
+
+        await eventHandler.publish('posts_ch', {
+            body: {id: req.params.postId, commentId: comment.payload._id},
+            event: 'addcomment',
+        })
+        .then(reply => {
+            res.status(reply.status).send(polish(comment.payload));
+        })
+        .catch(next);
+    })
+    .catch(next);
+})
+
 // Delete a post
-router.delete('/:id', (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
     eventHandler.publish('posts_ch', {
         body: {id : req.params.id, user: req.user},
         event: 'delete',
@@ -125,7 +191,7 @@ router.delete('/:id', (req, res, next) => {
 
 
 // Subscribe to a post
-router.post('/:id', (req, res, next) => {
+router.post('/:id/subscribe', async (req, res, next) => {
     eventHandler.publish('posts_ch', {
         body: {_id : req.params.id},
         event: 'subscribe',

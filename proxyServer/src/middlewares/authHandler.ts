@@ -27,11 +27,12 @@ export default (req : Request, res : Response, next : NextFunction) => {
 
         const payload : any = jwt.verify(token, accessKeyPub, {algorithms: ['RS256', 'RS512']});
 
-        eventHandler.publish('users_ch', {event: 'list', body: {email : payload.username}})
+        eventHandler.publish('users_ch', {event: 'list', body: {query: {email: payload.username} }})
         .then(({ payload }) => {
+
             if(Array.isArray(payload) && payload.length === 0)
                 throw new HTTPError('unauthorized_client', 'User was not found or it was deleted')
-            req.user = payload;
+            req.user = payload[0];
             next();
         })
         .catch(next)

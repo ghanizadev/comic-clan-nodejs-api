@@ -113,7 +113,7 @@ export default class EventHandler {
     }
 }
 
-export type Event = 'create' | 'modify' | 'delete' | 'list';
+export type Event = 'create' | 'modify' | 'delete' | 'list' | 'addcomment' | 'addmedia';
 
 export const eventHandler = EventHandler.getInstance();
 eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'user_ch');

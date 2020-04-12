@@ -12,7 +12,7 @@ const Post = Database.getInstance().getModel();
 
 export default {
     async create(body : IPostCreateOptions, user : any) : Promise<IPostDTO | void> {
-        const save = {...body, userId:  user.id}
+        const save = {...body, userId:  user._id}
         const post = new Post(save);
 
         return post.save()
@@ -81,19 +81,19 @@ export default {
 
 
     async addComment(modifiedPost : IPostAddCommentOptions) : Promise<IPostDTO | void> {
-        const queryPost = await Post.findOne({ _id: modifiedPost._id }).exec();
+        const queryPost = await Post.findOne({ _id: modifiedPost.id }).exec();
 
-        if(!queryPost || !queryPost.comments) return;
+        if(!queryPost)
+            throw new HTTPError('invalid_request', 'It is not possible to reply a reply', 400);
 
         queryPost.comments.push(modifiedPost.commentId);
 
         const result = await queryPost.save();
-        console.log(result)
 
         if(!result) {
             throw new HTTPError(
                 'not_found',
-                `post with id=${modifiedPost._id} does not exist or it is deleted`,
+                `Post does not exist or it is deleted`,
                 404
             );
         }
@@ -135,8 +135,6 @@ export default {
                 404
             );
         }
-            
-            
             
         const { _id, _v, userId, comments, description, body, media, createdAt, updatedAt } = queryPost;
 

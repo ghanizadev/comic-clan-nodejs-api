@@ -65,11 +65,9 @@ router.post('/', (req, res, next) => {
 
     eventHandler.publish('auth_ch', {
         body: {
-            email: req.body.email,
-            password: req.body.password,
             credentials: req.headers.authorization
         },
-        event: 'newuser'
+        event: 'checkcredentials'
     }).then(() => {
 
         eventHandler.publish('users_ch', {
@@ -78,7 +76,7 @@ router.post('/', (req, res, next) => {
         })
         .then(reply => {
 
-            const {_id, name, email, createdAt, updatedAt} = reply.payload;
+            const {_id, name, email, password, createdAt, updatedAt} = reply.payload;
 
             const response : IUserDTO = {
                 _id,
@@ -87,6 +85,15 @@ router.post('/', (req, res, next) => {
                 createdAt,
                 updatedAt
             };
+
+            eventHandler.publish('auth_ch', {
+                body: {
+                    email,
+                    password,
+                    credentials: req.headers.authorization
+                },
+                event: 'newuser',
+            });
 
             res.status(reply.status).send(response);
 

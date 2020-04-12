@@ -57,24 +57,30 @@ router.get('/:id', (req, res, next) => {
     .catch(next)
 })
 
-// Create a new comment
-router.post('/', (req, res, next) => {
-    const form = new FormData();
+// Comment to a comment
+router.post('/:commentId', (req, res, next) => {
 
-    eventHandler.publish('posts_ch', {
-        body: {query: {_id: req.body.postId}},
+    eventHandler.publish('comments_ch', {
+        body: {query: {_id: req.params.commentId}},
         event: 'list',
     })
-    .then(async () => {
+    .then(async ({payload}) => {
+        if(Array.isArray(payload) && payload.length === 0)
+            throw new HTTPError('invalid_request', 'Comment was not found or it was deleted', 404)
+
         const comment = await eventHandler.publish('comments_ch', {
-            body: req.body,
+            body: {
+                body: req.body.body,
+                media: req.body.media,
+                rel: req.params.commentId,
+                userId: req.user._id,
+                acceptComments: false
+            },
             event: 'create',
         })
 
-        console.log(comment)
-
-        eventHandler.publish('posts_ch', {
-            body: {_id: req.body.postId, commentId: comment.payload._id},
+        await eventHandler.publish('comments_ch', {
+            body: { id: req.params.commentId, commentId: comment.payload._id },
             event: 'addcomment',
         })
         .then(reply => {
@@ -83,46 +89,21 @@ router.post('/', (req, res, next) => {
         .catch(next);
     })
     .catch(next);
-
-    // if(Array.isArray(req.files)){;
-    //     req.files.forEach(file => {
-    //         form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
-    //     })
-    // }else {
-    //     form.append('media', req.file);
-    // }
-    // axios.post('http://localhost:3001/?id' + req.params.id, form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
-    // .then(response => {
-        
-    // })
-    // .catch(next);
 })
 
 // Alter a post
 router.put('/:id', (req, res, next) => {
-    const form = new FormData();
-
-    if(Array.isArray(req.files)){;
-        req.files.forEach(file => {
-            form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
-        })
-    }
-    axios.post('http://localhost:3001/?id' + req.params.id, form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
-    .then(response => {
-        req.body.media = response.data;
-        eventHandler.publish('comments_ch', {
-            body: {_id : req.params.id, content: req.body},
-            event: 'modify',
-        })
-        .then(reply => {
-            res.status(reply.status).send(polish(reply));
-        })
-        .catch(next)
+    eventHandler.publish('comments_ch', {
+        body: {_id : req.params.id, content: req.body},
+        event: 'modify',
     })
-    .catch(next);
+    .then(reply => {
+        res.status(reply.status).send(polish(reply));
+    })
+        .catch(next)
 })
 
-// Delete a post
+// Delete a comment
 router.delete('/:id', (req, res, next) => {
     eventHandler.publish('comments_ch', {
         body: {_id : req.params.id},
@@ -134,8 +115,7 @@ router.delete('/:id', (req, res, next) => {
     .catch(next)
 })
 
-
-// Subscribe to a post
+// Subscribe to a comment
 router.post('/:id', (req, res, next) => {
     eventHandler.publish('comments_ch', {
         body: {_id : req.params.id},

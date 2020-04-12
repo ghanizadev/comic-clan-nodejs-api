@@ -17,12 +17,12 @@ export interface IAuthorize {
 }
 
 const accessKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'private-access.pem')).toString().trim();
-const accessKeyPub = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'public-access.pem')).toString().trim();
+
 const refreshKey = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'private-refresh.pem')).toString().trim();
 const refreshKeyPub = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'public-refresh.pem')).toString().trim();
 
 
-const issueNewToken = async (db : RedisClient, username: string, password: string, next : NextFunction) => {
+const issueNewToken = async (db : RedisClient, username: string, password: string, issuer : string, next : NextFunction) => {
     
     return await new Promise((res, rej) => {
         db.hget(username, 'password', (error, value) => {
@@ -32,6 +32,7 @@ const issueNewToken = async (db : RedisClient, username: string, password: strin
         });
     })
     .then(async value => {
+        const scope = ['feed', 'profile', 'post', 'comment']
         const hash = await bcrypt.hash(password, process.env.PASSWORD_SALT || 8);
         const response = await EventHandler.getInstance().publish('users_ch', {event:"list", body: {query: { email: username} } });
         
@@ -42,8 +43,8 @@ const issueNewToken = async (db : RedisClient, username: string, password: strin
 
         if(hash === value) {
             
-            const access_token = jwt.sign({ username: email, id: _id, name }, {key: accessKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', expiresIn: '1h' })
-            const refresh_token = jwt.sign({ username: email, id: _id, name }, {key: refreshKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256'});
+            const access_token = jwt.sign({ username: email, id: _id, name, scope }, {key: accessKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', expiresIn: '1h', issuer })
+            const refresh_token = jwt.sign({ username: email, id: _id, name, scope }, {key: refreshKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', issuer});
 
             db.hset(username, 'refreshToken', refresh_token);
 
@@ -52,7 +53,7 @@ const issueNewToken = async (db : RedisClient, username: string, password: strin
                 access_token,
                 expires_in: 60 * 60,
                 refresh_token,
-                scope: 'feed;profile;post;comment;'
+                scope
             }
         }else {
             throw new HTTPError('unauthorized_client', 'User does not exists, it had been deleted or username and password does not match', 401);
@@ -81,10 +82,11 @@ const issueFromRefreshToken = async (db : RedisClient, token: string, next : Nex
         if(value === token) {
             const response = await EventHandler.getInstance().publish('users_ch', {event:"list", body: {query: { email: payload.username} } });
 
+            const scope = ['feed', 'profile', 'post', 'comment']
             const {name, _id, email} = response.payload.shift();
 
-            const access_token = jwt.sign({ username: email, id: _id, name }, {key: accessKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', expiresIn: '1h',  })
-            const refresh_token = jwt.sign({ username: email, id: _id, name }, {key: refreshKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256'});
+            const access_token = jwt.sign({ username: email, id: _id, name, scope }, {key: accessKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', expiresIn: '1h', issuer: payload.iss })
+            const refresh_token = jwt.sign({ username: email, id: _id, name, scope }, {key: refreshKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', issuer: payload.iss});
             db.hset(email || '', 'refreshToken', refresh_token);
 
             return {
@@ -92,7 +94,7 @@ const issueFromRefreshToken = async (db : RedisClient, token: string, next : Nex
                 access_token,
                 expires_in: 60 * 60,
                 refresh_token,
-                scope: 'feed;profile;post;comment;'
+                scope
             }
         }else {
             throw new HTTPError('invalid_client', 'This token was issued already. If this problem persists, please, call administrator', 401);
@@ -106,6 +108,8 @@ const issueFromRefreshToken = async (db : RedisClient, token: string, next : Nex
 export default {
     async authorize (req : Request, res : Response, next : NextFunction) {
         try{
+            let basicAuth : string[];
+
             if(req.headers?.["content-type"] !== 'application/x-www-form-urlencoded') {
                 throw new HTTPError('invalid_request', 'request is malformed, it must be application/x-www-form-urlencoded', 400);
             }
@@ -121,17 +125,17 @@ export default {
 
                 auth = Buffer.from(auth, 'base64').toString();
 
-                const [clientId, clientSecret] = auth.split(':');
+                basicAuth = auth.split(':');
 
                 await new Promise((res : (v : string) => void, rej : (e : any) => void ) => {
-                    req.database.hget('clients', clientId, (error : any, value : string) => {
+                    req.database.hget('clients', basicAuth[0], (error : any, value : string) => {
                         if(error) rej(error)
                         if(!value) rej({error: 'invalid_client', error_description: "client credentials are invalid or it does not match", status: 401});
                         res(value);
                     });
                 })
                 .then(value => {
-                    if(value !== clientSecret) throw new HTTPError('invalid_client', 'client credentials are invalid or it does not match', 401);
+                    if(value !== basicAuth[1]) throw new HTTPError('invalid_client', 'client credentials are invalid or it does not match', 401);
                 })
                 .catch(e => {
                     throw new HTTPError(e);
@@ -142,7 +146,7 @@ export default {
                 const token = await issueFromRefreshToken(req.database, req.body.refresh_token, next);
                 res.status(201).send(token);
             } else if (req.body?.grant_type === 'password') {
-                const token = await issueNewToken(req.database, req.body.username, req.body.password, next);
+                const token = await issueNewToken(req.database, req.body.username, req.body.password, basicAuth[0], next);
                 res.status(201).send(token);
             } else if(['authorization_code', 'device_code', 'client_credentials'].includes(req.body?.grant_type)) {
                 throw new HTTPError('unsupported_grant_type', 'supproted grant types are: password; refresh_token');

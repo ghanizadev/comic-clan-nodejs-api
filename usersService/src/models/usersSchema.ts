@@ -42,7 +42,7 @@ const UserSchema = new Schema({
 
 UserSchema.pre('save', async function(next) {
     if (!this.isModified('password')) next();
-
+    
     (this as IUser).password = await bcrypt.hash((this as IUser).password, process.env.PASSWORD_SALT || 8);
 });
 

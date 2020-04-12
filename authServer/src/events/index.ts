@@ -5,7 +5,7 @@ import Message from './Message';
 import Reply from './Reply';
 import HTTPError from '../errors/HTTPError';
 
-type Event = 'newuser' | 'resetpassword' | 'removeuser'
+type Event = 'newuser' | 'resetpassword' | 'removeuser' | 'checkcredentials'
 export default class EventHandler {
     private static instance : EventHandler;
     private consumer !: redis.RedisClient;

@@ -59,6 +59,17 @@ const run = async () => {
       else reply({error: 'failed_to_update', error_description: e.message, status: 500});
     }
   });
+
+  eventHandler.on("addcomment", async (e, reply) => {
+    try {
+      const doc = await controller.addComment(e.body);
+      if (doc) reply({ payload: doc, status: 200 });
+      else reply({error: 'not_found', error_description: "post was not found in our database", status: 404})
+    }catch(e) {
+      if(e.error && e.error_description && e.status) reply(e)
+      else reply({error: 'failed_to_comment', error_description: e.message, status: 500});
+    }
+  });
 }
 
 run().catch(console.error);

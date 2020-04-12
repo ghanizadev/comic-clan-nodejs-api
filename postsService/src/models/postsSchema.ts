@@ -5,7 +5,7 @@ export interface IPost extends Document {
     description : string;
     body : string;
     media ?: string[];
-    comments ?: string[];
+    comments : string[];
     updatedAt ?: string;
     createdAt ?: string;
     _id : string;

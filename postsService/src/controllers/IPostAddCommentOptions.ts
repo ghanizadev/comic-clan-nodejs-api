@@ -1,4 +1,4 @@
 export interface IPostAddCommentOptions {
-    _id: string;
+    id: string;
     commentId: string;
 }

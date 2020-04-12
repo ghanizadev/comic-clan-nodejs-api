@@ -6,10 +6,8 @@ import * as bodyParser from 'body-parser';
 import * as path from 'path';
 import compression from 'compression';
 import cors from 'cors';
-import * as http from 'http';
 import io from 'socket.io';
 import routes from './routes';
-import logger from './utils/logger';
 
 dotenv.config();
 
