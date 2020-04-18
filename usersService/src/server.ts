@@ -28,6 +28,18 @@ const run = async () => {
     }
   });
 
+  eventHandler.on('single', async (e, reply) => {
+    try {
+      const doc = await controller.single(e.body);
+      if (doc) reply({payload: doc, status: 200});
+      else reply({error: 'not_found', error_description: "user was not found in our database", status: 404});
+
+    }catch(e) {
+      if(e.error && e.error_description && e.status) reply(e)
+      else reply({error: 'failed_to_fetch', error_description: e.message, status: 500});
+    }
+  });
+
   eventHandler.on('create', async (e, reply) => {
     try {
       const doc = await controller.create(e.body);

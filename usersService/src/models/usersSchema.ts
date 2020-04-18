@@ -10,6 +10,7 @@ export interface IUser extends Document {
     createdAt ?: string;
     updatedAt ?: string;
     active ?: boolean;
+    scopes : string[];
     _id : string;
     _v : number;
     [key : string] : any;
@@ -42,7 +43,8 @@ const UserSchema = new Schema({
             message: "Incorrect password format, please verify.",
         }
     },
-    active: { type: Boolean , default: true }
+    active: { type: Boolean , default: true },
+    scopes: {type: [String], required: true }
 }, { timestamps: true, collection: 'users' });
 
 UserSchema.pre('save', async function(next) {

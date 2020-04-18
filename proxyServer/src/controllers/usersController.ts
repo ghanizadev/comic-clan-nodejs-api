@@ -21,11 +21,12 @@ router.get('/', authHandler, (req, res, next) => {
         const response : IUserDTO[] = [];
 
         reply.payload.forEach((item : any) => {
-            const {_id, name, email, createdAt, updatedAt} = item;
+            const {_id, name, email, scopes, createdAt, updatedAt} = item;
             response.push({
                 _id,
                 name,
                 email,
+                scopes,
                 createdAt,
                 updatedAt
             })
@@ -42,12 +43,13 @@ router.get('/:email', authHandler, (req, res, next) => {
         event: 'list',
     })
     .then(reply => {
-        const {_id, name, email, password, createdAt, updatedAt} = reply.payload;
+        const {_id, name, email, scopes, createdAt, updatedAt} = reply.payload;
 
         const response : IUserDTO = {
             _id,
             name,
             email,
+            scopes,
             createdAt,
             updatedAt
         };
@@ -59,6 +61,8 @@ router.get('/:email', authHandler, (req, res, next) => {
 
 // Post a new user
 router.post('/', (req, res, next) => {
+    delete req.body.scopes;
+
     if(!req.headers?.authorization || !req.headers.authorization.startsWith("Basic "))
         throw new HTTPError('invalid_request', 'Missing "Authorization" header', 400)
 
@@ -83,6 +87,7 @@ router.post('/', (req, res, next) => {
             event: 'create',
         })
         .then(reply => {
+            const scopes = ['feed', 'post', 'comments', 'profile'];
 
             const {_id, name, email, password, createdAt, updatedAt} = reply.payload;
 
@@ -90,6 +95,7 @@ router.post('/', (req, res, next) => {
                 _id,
                 name,
                 email,
+                scopes,
                 createdAt,
                 updatedAt
             };
@@ -122,17 +128,20 @@ router.post('/', (req, res, next) => {
 
 // Alter a user
 router.put('/:email', authHandler,  (req, res, next) => {
+    delete req.body.scopes;
+
     eventHandler.publish('users_ch', {
         body: {email : req.params.email, content: req.body},
         event: 'modify',
     })
     .then(reply => {
-        const {_id, name, email, password, createdAt, updatedAt} = reply.payload;
+        const {_id, name, email, scopes, createdAt, updatedAt} = reply.payload;
 
         const response : IUserDTO = {
             _id,
             name,
             email,
+            scopes,
             createdAt,
             updatedAt
         };
@@ -162,12 +171,13 @@ router.delete('/', authHandler,  (req, res, next) => {
             event: 'removeuser'
         })
 
-        const {_id, name, email, createdAt, updatedAt} = reply.payload;
+        const {_id, name, email, scopes, createdAt, updatedAt} = reply.payload;
 
         const response : IUserDTO = {
             _id,
             name,
             email,
+            scopes,
             createdAt,
             updatedAt
         };

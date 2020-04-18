@@ -31,7 +31,7 @@ export default {
                     throw new HTTPError(err);
             })
         } else {
-            const user = new User(body);
+            const user = new User({...body, scopes: ['feed', 'profile', 'post', 'comment']});
 
             return user.save()
             .then(async (doc) => {
@@ -54,6 +54,12 @@ export default {
         let users = await User.find({ ... body.query, active : true}).exec();
 
         return (users as IUser[]);
+    },
+
+    async single(body : IUserListOptions) : Promise<IUser> {
+        let user = await User.findOne({ ... body.query, active : true}).exec();
+
+        return (user as IUser);
     },
 
     async modify(body : IUserModifyOptions) : Promise<IUser> {

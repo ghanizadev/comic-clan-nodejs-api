@@ -113,4 +113,4 @@ export default class EventHandler {
     }
 }
 
-export type Event = 'create' | 'modify' | 'delete' | 'list';
+export type Event = 'create' | 'modify' | 'delete' | 'list' | 'single';
