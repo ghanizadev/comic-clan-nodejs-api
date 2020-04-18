@@ -27,7 +27,7 @@ const run = async () => {
     eventHandler.on('newuser', (message, reply) => {
         db.hset(message.body.email, 'password', message.body.password, (error) => {
             if(error)
-                return reply({error: "internal_error", error_description: "Something happen while trying to save user\'s authentication, try again later", status: 500});
+                return reply({error: "internal_error", error_description: "Something happened while trying to save user\'s authentication, try again later", status: 500});
             reply({payload: {}, status: 200});
         });
     })
@@ -40,10 +40,8 @@ const run = async () => {
 
         db.hget('clients', clientId, (error, secret) => {
 
-            if(error) return reply({error: "invalid_client", error_description: "Requested client does not exists or it was deleted", status: 401});
-
-            if(clientSecret !== secret)
-                return reply({error: "invalid_client", error_description: "Client ID and client secret does not match", status: 401});
+            if(error || clientSecret !== secret)
+                return reply({error: "invalid_client", error_description: "Client ID and client secret does not match or does not exist", status: 401});
             
             reply({payload: {}, status: 200});
         })

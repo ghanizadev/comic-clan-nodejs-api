@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -39,70 +50,181 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var models_1 = __importDefault(require("../models"));
-var error_1 = __importDefault(require("../error"));
-var database = new models_1.default('mongodb://localhost:27017', 'comicclan');
-var Post = database.getModel();
-database.connect();
+var errors_1 = __importDefault(require("../errors"));
+var postsSchema_1 = __importDefault(require("../models/postsSchema"));
+var events_1 = __importDefault(require("../events"));
+var eventHandler = events_1.default.getInstance();
 exports.default = {
-    create: function (body) {
+    create: function (body, user) {
         return __awaiter(this, void 0, void 0, function () {
-            var user;
+            var save, post, result;
             var _this = this;
             return __generator(this, function (_a) {
-                user = new Post(body);
-                return [2 /*return*/, user.save()
-                        .then(function (doc) { return __awaiter(_this, void 0, void 0, function () {
-                        var _id, _v, userId, description, comments, body, media, createdAt, updatedAt;
-                        return __generator(this, function (_a) {
-                            _id = doc._id, _v = doc._v, userId = doc.userId, description = doc.description, comments = doc.comments, body = doc.body, media = doc.media, createdAt = doc.createdAt, updatedAt = doc.updatedAt;
-                            return [2 /*return*/, {
-                                    _id: _id,
-                                    userId: userId,
-                                    description: description,
-                                    body: body,
-                                    media: media,
-                                    comments: comments,
-                                    createdAt: createdAt,
-                                    updatedAt: updatedAt,
-                                    _v: _v,
-                                }];
-                        });
-                    }); })
-                        .catch(function (err) {
-                        throw new error_1.default('failed_to_save', err.message, 400);
-                    })];
+                switch (_a.label) {
+                    case 0:
+                        save = __assign(__assign({}, body), { userId: user._id });
+                        post = new postsSchema_1.default(save);
+                        return [4 /*yield*/, post.save()
+                                .then(function (doc) { return __awaiter(_this, void 0, void 0, function () {
+                                var _id, _v, user, description, comments, body, media, createdAt, updatedAt;
+                                return __generator(this, function (_a) {
+                                    _id = doc._id, _v = doc._v, user = doc.user, description = doc.description, comments = doc.comments, body = doc.body, media = doc.media, createdAt = doc.createdAt, updatedAt = doc.updatedAt;
+                                    return [2 /*return*/, {
+                                            _id: _id,
+                                            user: user,
+                                            description: description,
+                                            body: body,
+                                            media: media,
+                                            comments: comments,
+                                            createdAt: createdAt,
+                                            updatedAt: updatedAt,
+                                            _v: _v,
+                                        }];
+                                });
+                            }); })
+                                .catch(function (err) {
+                                throw new errors_1.default('failed_to_save', err.message, 400);
+                            })];
+                    case 1:
+                        result = _a.sent();
+                        return [2 /*return*/, result];
+                }
             });
         });
     },
     list: function (body) {
         return __awaiter(this, void 0, void 0, function () {
-            var users;
+            var posts, promises, result;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, Post.find(body.query).exec()];
+                    case 0: return [4 /*yield*/, postsSchema_1.default.paginate(body.query, body.pagination || {})];
                     case 1:
-                        users = _a.sent();
-                        return [2 /*return*/, users];
+                        posts = _a.sent();
+                        promises = [];
+                        if (Array.isArray(posts.docs))
+                            posts.docs.forEach(function (doc) {
+                                var promise = new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+                                    var id, post;
+                                    return __generator(this, function (_a) {
+                                        switch (_a.label) {
+                                            case 0:
+                                                id = doc.userId;
+                                                return [4 /*yield*/, eventHandler.publish('users_ch', {
+                                                        event: 'list',
+                                                        body: { query: { _id: id } }
+                                                    }).then(function (res) {
+                                                        var user = res.payload.shift();
+                                                        delete user.password;
+                                                        delete user.active;
+                                                        post = doc.toObject();
+                                                        delete post.userId;
+                                                        post = __assign(__assign({}, post), { user: user });
+                                                    })
+                                                        .catch(reject)];
+                                            case 1:
+                                                _a.sent();
+                                                return [4 /*yield*/, eventHandler.publish('comments_ch', {
+                                                        event: 'list',
+                                                        body: { query: { _id: { $in: post.comments } } }
+                                                    }).then(function (comments) {
+                                                        post.comments = comments.payload;
+                                                        resolve(post);
+                                                    })
+                                                        .catch(reject)];
+                                            case 2:
+                                                _a.sent();
+                                                return [2 /*return*/];
+                                        }
+                                    });
+                                }); });
+                                promises.push(promise);
+                            });
+                        return [4 /*yield*/, Promise.all(promises)];
+                    case 2:
+                        result = _a.sent();
+                        posts.docs = result;
+                        return [2 /*return*/, posts];
+                }
+            });
+        });
+    },
+    single: function (body) {
+        return __awaiter(this, void 0, void 0, function () {
+            var post, user_1, comments_1, id, result, e_1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 4, , 5]);
+                        return [4 /*yield*/, postsSchema_1.default.findById(body.query._id)];
+                    case 1:
+                        post = _a.sent();
+                        if (!post)
+                            throw new errors_1.default('not_found', 'This post was not found. It might been deleted', 404);
+                        id = post.userId;
+                        return [4 /*yield*/, eventHandler.publish('users_ch', {
+                                event: 'list',
+                                body: { query: { _id: id } }
+                            })
+                                .then(function (res) {
+                                var userFetched = res.payload.shift();
+                                delete userFetched.password;
+                                delete userFetched.active;
+                                user_1 = userFetched;
+                            })
+                                .catch(function (e) {
+                                throw new errors_1.default(e);
+                            })];
+                    case 2:
+                        _a.sent();
+                        return [4 /*yield*/, eventHandler.publish('comments_ch', {
+                                event: 'list',
+                                body: { query: { _id: { $in: post.comments } } }
+                            })
+                                .then(function (commentsFetched) {
+                                comments_1 = commentsFetched.payload;
+                            })
+                                .catch(function (e) {
+                                throw new errors_1.default(e);
+                            })];
+                    case 3:
+                        _a.sent();
+                        result = post.toObject();
+                        result === null || result === void 0 ? true : delete result.userId;
+                        return [2 /*return*/, __assign(__assign({}, result), { user: user_1,
+                                comments: comments_1 })];
+                    case 4:
+                        e_1 = _a.sent();
+                        if (e_1.name === "CastError")
+                            throw new errors_1.default('not_found', 'This post was not found. It might been deleted', 404);
+                        throw new errors_1.default(e_1);
+                    case 5: return [2 /*return*/];
                 }
             });
         });
     },
     modify: function (modifiedPost) {
         return __awaiter(this, void 0, void 0, function () {
-            var queryPost, _id, _v, userId, comments, description, body, media, createdAt, updatedAt;
+            var queryPost, doc, _id, _v, user, comments, description, body, media, createdAt, updatedAt;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, Post.findOneAndUpdate({ _id: modifiedPost._id }, modifiedPost.content, { new: true }).exec()];
+                    case 0: return [4 /*yield*/, postsSchema_1.default.findOne({ _id: modifiedPost._id }).exec()];
                     case 1:
                         queryPost = _a.sent();
                         if (!queryPost) {
-                            throw new error_1.default('not_found', "post with id=" + modifiedPost._id + " does not exist or it is deleted", 404);
+                            throw new errors_1.default('not_found', "post with id=" + modifiedPost._id + " does not exist or it is deleted", 404);
                         }
-                        _id = queryPost._id, _v = queryPost._v, userId = queryPost.userId, comments = queryPost.comments, description = queryPost.description, body = queryPost.body, media = queryPost.media, createdAt = queryPost.createdAt, updatedAt = queryPost.updatedAt;
+                        if (queryPost.userId !== modifiedPost.user.id) {
+                            throw new errors_1.default('invalid_request', "user is not permited to modify or delete this request", 403);
+                        }
+                        queryPost.set(modifiedPost.content);
+                        return [4 /*yield*/, queryPost.save()];
+                    case 2:
+                        doc = _a.sent();
+                        _id = doc._id, _v = doc._v, user = doc.user, comments = doc.comments, description = doc.description, body = doc.body, media = doc.media, createdAt = doc.createdAt, updatedAt = doc.updatedAt;
                         return [2 /*return*/, {
                                 _id: _id,
-                                userId: userId,
+                                user: user,
                                 description: description,
                                 body: body,
                                 media: media,
@@ -117,30 +239,25 @@ exports.default = {
     },
     addComment: function (modifiedPost) {
         return __awaiter(this, void 0, void 0, function () {
-            var queryPost, result, _id, _v, userId, comments, description, body, media, createdAt, updatedAt;
+            var queryPost, result, _id, _v, user, comments, description, body, media, createdAt, updatedAt;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, Post.findOne({ _id: modifiedPost._id }).exec()];
+                    case 0: return [4 /*yield*/, postsSchema_1.default.findOne({ _id: modifiedPost.id }).exec()];
                     case 1:
                         queryPost = _a.sent();
-                        if (!queryPost || !queryPost.comments)
-                            return [2 /*return*/];
-                        if (Array.isArray(modifiedPost.commentsId)) {
-                            modifiedPost.commentsId = Array.prototype.concat(queryPost.comments, modifiedPost.commentsId);
-                        }
-                        else {
-                            queryPost.comments.push(modifiedPost.commentsId);
-                        }
+                        if (!queryPost)
+                            throw new errors_1.default('invalid_request', 'It is not possible to reply a reply', 400);
+                        queryPost.comments.push(modifiedPost.commentId);
                         return [4 /*yield*/, queryPost.save()];
                     case 2:
                         result = _a.sent();
                         if (!result) {
-                            throw new error_1.default('not_found', "post with id=" + modifiedPost._id + " does not exist or it is deleted", 404);
+                            throw new errors_1.default('not_found', "Post does not exist or it is deleted", 404);
                         }
-                        _id = result._id, _v = result._v, userId = result.userId, comments = result.comments, description = result.description, body = result.body, media = result.media, createdAt = result.createdAt, updatedAt = result.updatedAt;
+                        _id = result._id, _v = result._v, user = result.user, comments = result.comments, description = result.description, body = result.body, media = result.media, createdAt = result.createdAt, updatedAt = result.updatedAt;
                         return [2 /*return*/, {
                                 _id: _id,
-                                userId: userId,
+                                user: user,
                                 description: description,
                                 body: body,
                                 media: media,
@@ -154,34 +271,28 @@ exports.default = {
         });
     },
     addMedia: function (modifiedPost) {
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
-            var queryPost, result, _id, _v, userId, comments, description, body, media, createdAt, updatedAt;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, Post.findOne({ _id: modifiedPost._id }).exec()];
+            var queryPost, result, _id, _v, user, comments, description, body, media, createdAt, updatedAt;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, postsSchema_1.default.findOne({ _id: modifiedPost.id }).exec()];
                     case 1:
-                        queryPost = _a.sent();
-                        if (!queryPost || !queryPost.media)
-                            return [2 /*return*/];
-                        if (Array.isArray(modifiedPost.photosURL)) {
-                            modifiedPost.photosURL = Array.prototype.concat(queryPost.media, modifiedPost.photosURL);
+                        queryPost = _b.sent();
+                        if (!queryPost) {
+                            throw new errors_1.default('not_found', "post with id=" + modifiedPost.id + " does not exist or it is deleted", 404);
                         }
-                        else {
-                            queryPost.media.push(modifiedPost.photosURL);
-                        }
+                        (_a = queryPost.media) === null || _a === void 0 ? void 0 : _a.push(modifiedPost.file);
                         return [4 /*yield*/, queryPost.save()];
                     case 2:
-                        result = _a.sent();
+                        result = _b.sent();
                         if (!result) {
-                            throw new error_1.default('not_found', "post with id=" + modifiedPost._id + " does not exist or it is deleted", 404);
+                            throw new errors_1.default('not_found', "post with id=" + modifiedPost.id + " does not exist or it is deleted", 404);
                         }
-                        if (!queryPost) {
-                            throw new error_1.default('not_found', "post with id=" + modifiedPost._id + " does not exist or it is deleted", 404);
-                        }
-                        _id = queryPost._id, _v = queryPost._v, userId = queryPost.userId, comments = queryPost.comments, description = queryPost.description, body = queryPost.body, media = queryPost.media, createdAt = queryPost.createdAt, updatedAt = queryPost.updatedAt;
+                        _id = queryPost._id, _v = queryPost._v, user = queryPost.user, comments = queryPost.comments, description = queryPost.description, body = queryPost.body, media = queryPost.media, createdAt = queryPost.createdAt, updatedAt = queryPost.updatedAt;
                         return [2 /*return*/, {
                                 _id: _id,
-                                userId: userId,
+                                user: user,
                                 description: description,
                                 body: body,
                                 media: media,
@@ -196,19 +307,25 @@ exports.default = {
     },
     delete: function (deleteOptions) {
         return __awaiter(this, void 0, void 0, function () {
-            var queryPost, _id, _v, userId, comments, description, body, media, createdAt, updatedAt;
+            var find, _id, _v, user, comments, description, body, media, createdAt, updatedAt;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, Post.findOneAndDelete({ _id: deleteOptions._id }).exec()];
+                    case 0: return [4 /*yield*/, postsSchema_1.default.findById(deleteOptions.id).exec()];
                     case 1:
-                        queryPost = _a.sent();
-                        if (!queryPost) {
-                            throw new error_1.default('not_found', "post with id=" + deleteOptions._id + " does not exist or it is deleted", 404);
+                        find = _a.sent();
+                        if (!find) {
+                            throw new errors_1.default('not_found', "post with id=" + deleteOptions.id + " does not exist or it is deleted", 404);
                         }
-                        _id = queryPost._id, _v = queryPost._v, userId = queryPost.userId, comments = queryPost.comments, description = queryPost.description, body = queryPost.body, media = queryPost.media, createdAt = queryPost.createdAt, updatedAt = queryPost.updatedAt;
+                        if (find.userId !== deleteOptions.user.id) {
+                            throw new errors_1.default('invalid_request', "user is not permited to modify or delete this request", 403);
+                        }
+                        return [4 /*yield*/, postsSchema_1.default.findByIdAndDelete(deleteOptions.id).exec()];
+                    case 2:
+                        _a.sent();
+                        _id = find._id, _v = find._v, user = find.user, comments = find.comments, description = find.description, body = find.body, media = find.media, createdAt = find.createdAt, updatedAt = find.updatedAt;
                         return [2 /*return*/, {
                                 _id: _id,
-                                userId: userId,
+                                user: user,
                                 description: description,
                                 body: body,
                                 media: media,

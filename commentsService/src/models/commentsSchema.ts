@@ -1,19 +1,10 @@
 
-import mongoose, {Document, Schema} from 'mongoose';
+import mongoose, {Schema} from 'mongoose';
+import { IComment } from './IComment';
+import { IModel } from './IModel';
+import pagination from 'mongoose-paginate-v2'
 
-export interface IComment extends Document {
-    userId: string;
-    body : string;
-    media ?: string[];
-    comments : string[];
-    acceptComments ?: boolean;
-    updatedAt ?: string;
-    createdAt ?: string;
-    _id : string;
-    _v : number;
-}
-
-const UserSchema = new Schema({
+const CommentSchema = new Schema({
     userId: { type: String , required: true },
     body: { type: String , required: true },
     media: { type: [String] , default: [] },
@@ -21,5 +12,6 @@ const UserSchema = new Schema({
     acceptComments: {type: Boolean, default: true}
 }, { timestamps: true, collection: 'comments' });
 
+CommentSchema.plugin(pagination)
 
-export default mongoose.model<IComment>('Comments', UserSchema);
+export default mongoose.model<IComment, IModel>('Comments', CommentSchema);

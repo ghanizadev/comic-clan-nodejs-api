@@ -40,124 +40,61 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
+var errors_1 = __importDefault(require("../errors"));
 var polish_1 = __importDefault(require("../utils/polish"));
 var events_1 = __importDefault(require("../events"));
 var router = express_1.default.Router();
 var eventHandler = events_1.default.getInstance();
 // Get all posts
-router.get('/', function (req, res, next) {
-    eventHandler.publish('posts_ch', {
-        body: {},
-        event: 'list',
-    })
-        .then(function (posts) { return __awaiter(void 0, void 0, void 0, function () {
-        var results, r;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, Promise.all(posts.payload.map(function (post) { return __awaiter(void 0, void 0, void 0, function () {
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0: return [4 /*yield*/, eventHandler.publish('users_ch', {
-                                        body: { query: { _id: post.userId } },
-                                        event: 'list',
-                                    })
-                                        .then(function (_a) {
-                                        var payload = _a.payload;
-                                        if (payload.length === 0)
-                                            return;
-                                        post.user = polish_1.default(payload.shift());
-                                    })
-                                        .catch(next)];
-                                case 1:
-                                    _a.sent();
-                                    return [4 /*yield*/, eventHandler.publish('comments_ch', {
-                                            body: { query: { _id: { $in: post.comments } } },
-                                            event: 'list',
-                                        })
-                                            .then(function (_a) {
-                                            var payload = _a.payload;
-                                            return __awaiter(void 0, void 0, void 0, function () {
-                                                var comments;
-                                                return __generator(this, function (_b) {
-                                                    switch (_b.label) {
-                                                        case 0:
-                                                            if (payload.length === 0)
-                                                                return [2 /*return*/];
-                                                            return [4 /*yield*/, Promise.all(payload.map(function (comment) { return __awaiter(void 0, void 0, void 0, function () {
-                                                                    return __generator(this, function (_a) {
-                                                                        switch (_a.label) {
-                                                                            case 0: return [4 /*yield*/, eventHandler.publish('users_ch', {
-                                                                                    body: { query: { _id: comment.userId } },
-                                                                                    event: 'list',
-                                                                                })
-                                                                                    .then(function (_a) {
-                                                                                    var payload = _a.payload;
-                                                                                    if (payload.length === 0)
-                                                                                        return;
-                                                                                    comment.user = polish_1.default(payload.shift());
-                                                                                    delete comment.userId;
-                                                                                    return comment;
-                                                                                })
-                                                                                    .catch(next)];
-                                                                            case 1: return [2 /*return*/, _a.sent()];
-                                                                        }
-                                                                    });
-                                                                }); }))];
-                                                        case 1:
-                                                            comments = _b.sent();
-                                                            post.comments = comments;
-                                                            return [2 /*return*/];
-                                                    }
-                                                });
-                                            });
-                                        })
-                                            .catch(next)];
-                                case 2:
-                                    _a.sent();
-                                    return [2 /*return*/, post];
-                            }
-                        });
-                    }); }))];
-                case 1:
-                    results = _a.sent();
-                    r = [];
-                    results.forEach(function (e) {
-                        if (e)
-                            r.push(polish_1.default(e));
-                    });
-                    res.status(posts.status).send(r);
-                    return [2 /*return*/];
-            }
-        });
-    }); })
-        .catch(next);
-});
+router.get('/', function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        eventHandler.publish('posts_ch', {
+            body: { pagination: req.query },
+            event: 'list',
+        })
+            .then(function (posts) { return __awaiter(void 0, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                res.send(posts.payload);
+                return [2 /*return*/];
+            });
+        }); })
+            .catch(next);
+        return [2 /*return*/];
+    });
+}); });
 // Get post by ID
-router.get('/:id', function (req, res, next) {
-    eventHandler.publish('posts_ch', {
-        body: { _id: req.params.id },
-        event: 'list',
-    })
-        .then(function (reply) {
-        res.status(reply.status).send(polish_1.default(reply));
-    })
-        .catch(next);
-});
+router.get('/:id', function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        eventHandler.publish('posts_ch', {
+            body: { query: { _id: req.params.id } },
+            event: 'single',
+        })
+            .then(function (reply) {
+            res.status(reply.status).send(reply.payload);
+        })
+            .catch(next);
+        return [2 /*return*/];
+    });
+}); });
 // Create a new post
-router.post('/', function (req, res, next) {
-    eventHandler.publish('posts_ch', {
-        body: req.body,
-        event: 'create',
-    })
-        .then(function (reply) {
-        res.status(reply.status).send(polish_1.default(reply));
-    })
-        .catch(next);
-});
+router.post('/', function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        eventHandler.publish('posts_ch', {
+            body: req.body,
+            user: req.user,
+            event: 'create',
+        })
+            .then(function (reply) {
+            res.status(reply.status).send(polish_1.default(reply));
+        })
+            .catch(next);
+        return [2 /*return*/];
+    });
+}); });
 // Alter a post
 router.put('/:id', function (req, res, next) {
     eventHandler.publish('posts_ch', {
-        body: { _id: req.params.id, content: req.body },
+        body: { _id: req.params.id, content: req.body, user: req.user },
         event: 'modify',
     })
         .then(function (reply) {
@@ -165,26 +102,78 @@ router.put('/:id', function (req, res, next) {
     })
         .catch(next);
 });
+// Comment to a post
+router.post('/:postId/comment', function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        eventHandler.publish('posts_ch', {
+            body: { query: { _id: req.params.postId } },
+            event: 'list',
+        })
+            .then(function (_a) {
+            var payload = _a.payload;
+            return __awaiter(void 0, void 0, void 0, function () {
+                var comment;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            if (Array.isArray(payload) && payload.length === 0)
+                                throw new errors_1.default('invalid_request', 'Post was not found or it was deleted', 404);
+                            return [4 /*yield*/, eventHandler.publish('comments_ch', {
+                                    body: {
+                                        body: req.body.body,
+                                        media: req.body.media,
+                                        rel: req.params.postId,
+                                        userId: req.user._id
+                                    },
+                                    event: 'create',
+                                })];
+                        case 1:
+                            comment = _b.sent();
+                            return [4 /*yield*/, eventHandler.publish('posts_ch', {
+                                    body: { id: req.params.postId, commentId: comment.payload._id },
+                                    event: 'addcomment',
+                                })
+                                    .then(function (reply) {
+                                    res.status(reply.status).send(polish_1.default(comment.payload));
+                                })
+                                    .catch(next)];
+                        case 2:
+                            _b.sent();
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        })
+            .catch(next);
+        return [2 /*return*/];
+    });
+}); });
 // Delete a post
-router.delete('/:id', function (req, res, next) {
-    eventHandler.publish('posts_ch', {
-        body: { _id: req.params.id },
-        event: 'delete',
-    })
-        .then(function (reply) {
-        res.status(reply.status).send(polish_1.default(reply));
-    })
-        .catch(next);
-});
+router.delete('/:id', function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        eventHandler.publish('posts_ch', {
+            body: { id: req.params.id, user: req.user },
+            event: 'delete',
+        })
+            .then(function (reply) {
+            res.status(reply.status).send(polish_1.default(reply));
+        })
+            .catch(next);
+        return [2 /*return*/];
+    });
+}); });
 // Subscribe to a post
-router.post('/:id', function (req, res, next) {
-    eventHandler.publish('posts_ch', {
-        body: { _id: req.params.id },
-        event: 'subscribe',
-    })
-        .then(function (reply) {
-        res.status(reply.status).send(polish_1.default(reply));
-    })
-        .catch(next);
-});
+router.post('/:id/subscribe', function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        eventHandler.publish('posts_ch', {
+            body: { _id: req.params.id },
+            event: 'subscribe',
+        })
+            .then(function (reply) {
+            res.status(reply.status).send(polish_1.default(reply));
+        })
+            .catch(next);
+        return [2 /*return*/];
+    });
+}); });
 exports.default = router;

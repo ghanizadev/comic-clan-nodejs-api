@@ -49,17 +49,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var mongoose_1 = __importStar(require("mongoose"));
 var bcrypt = __importStar(require("bcrypt"));
 var emailChecker_1 = __importDefault(require("../utils/emailChecker"));
-var emailRegex = /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/g;
 var pwRegex = new RegExp(process.env.PW_REGEX || '');
 var UserSchema = new mongoose_1.Schema({
-    name: { type: String, required: true },
+    name: {
+        type: String,
+        required: true,
+        validate: {
+            validator: function (value) { return value !== ''; },
+            message: "Name cannot be an empty string.",
+        }
+    },
     email: {
         type: String,
         required: true,
         unique: true,
         validate: {
             validator: function (value) { return emailChecker_1.default(value); },
-            message: function (value) { return value.value + " is not a valid email, please check and try again"; },
+            message: function (value) { return "\"" + value.value + "\" is not a valid email, please check and try again."; },
         }
     },
     password: {
@@ -67,7 +73,7 @@ var UserSchema = new mongoose_1.Schema({
         required: true,
         validate: {
             validator: function (value) { return pwRegex.test(value); },
-            message: "incorrect password format, please verify",
+            message: "Incorrect password format, please verify.",
         }
     },
     active: { type: Boolean, default: true }
@@ -100,8 +106,12 @@ UserSchema.pre('save', function (next) {
     });
 });
 UserSchema.methods = {
-    compareHash: function (hash) {
-        return bcrypt.compare(hash, this.password);
+    compareHash: function (password) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, bcrypt.compare(password, this.password)];
+            });
+        });
     },
 };
 exports.default = mongoose_1.default.model('User', UserSchema);

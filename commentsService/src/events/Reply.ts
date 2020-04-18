@@ -1,5 +1,5 @@
 export interface Reply {
-    payload: object;
+    payload: any;
     status: number;
     from?: string;
     replyTo?: string;

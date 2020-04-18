@@ -38,174 +38,198 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 var events_1 = __importDefault(require("./events"));
 var controllers_1 = __importDefault(require("./controllers"));
-var dotenv = __importStar(require("dotenv"));
-dotenv.config();
+var dotenv_1 = __importDefault(require("dotenv"));
+var database_1 = __importDefault(require("./database"));
+var logger_1 = require("./utils/logger");
+dotenv_1.default.config();
 var run = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var eventHandler;
+    var database, eventHandler;
     return __generator(this, function (_a) {
-        eventHandler = new events_1.default('redis://localhost:6379/', 'posts_ch');
-        eventHandler.listen('posts_ch');
-        eventHandler.on('list', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
-            var doc, e_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, controllers_1.default.list(e.body)];
-                    case 1:
-                        doc = _a.sent();
-                        if (doc)
-                            reply({ payload: doc, status: 200 });
-                        else
-                            reply({ error: 'not_found', error_description: "post was not found in our database", status: 404 });
-                        return [3 /*break*/, 3];
-                    case 2:
-                        e_1 = _a.sent();
-                        if (e_1.error && e_1.error_description && e_1.status)
-                            reply(e_1);
-                        else
-                            reply({ error: 'failed_to_fetch', error_description: e_1.message, status: 500 });
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); });
-        eventHandler.on('create', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
-            var doc, e_2;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, controllers_1.default.create(e.body)];
-                    case 1:
-                        doc = _a.sent();
-                        if (doc)
-                            reply({ payload: doc, status: 201 });
-                        else
-                            reply({ error: 'failed_to_create', error_description: 'service returned an empty response', status: 500 });
-                        return [3 /*break*/, 3];
-                    case 2:
-                        e_2 = _a.sent();
-                        if (e_2.error && e_2.error_description && e_2.status)
-                            reply(e_2);
-                        else
-                            reply({ error: 'failed_to_create', error_description: e_2.message, status: 500 });
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); });
-        eventHandler.on('delete', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
-            var doc, e_3;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, controllers_1.default.delete(e.body)];
-                    case 1:
-                        doc = _a.sent();
-                        if (doc)
-                            reply({ payload: doc, status: 201 });
-                        else
-                            reply({ error: 'not_found', error_description: "post was not found in our database", status: 404 });
-                        return [3 /*break*/, 3];
-                    case 2:
-                        e_3 = _a.sent();
-                        if (e_3.error && e_3.error_description && e_3.status)
-                            reply(e_3);
-                        else
-                            reply({ error: 'failed_to_delete', error_description: e_3.message, status: 500 });
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); });
-        eventHandler.on('modify', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
-            var doc, e_4;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, controllers_1.default.modify(e.body)];
-                    case 1:
-                        doc = _a.sent();
-                        if (doc)
-                            reply({ payload: doc, status: 200 });
-                        else
-                            reply({ error: 'not_found', error_description: "post was not found in our database", status: 404 });
-                        return [3 /*break*/, 3];
-                    case 2:
-                        e_4 = _a.sent();
-                        if (e_4.error && e_4.error_description && e_4.status)
-                            reply(e_4);
-                        else
-                            reply({ error: 'failed_to_update', error_description: e_4.message, status: 500 });
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); });
-        eventHandler.on("addcomment", function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
-            var doc, e_5;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, controllers_1.default.addComment(e.body)];
-                    case 1:
-                        doc = _a.sent();
-                        if (doc)
-                            reply({ payload: doc, status: 200 });
-                        else
-                            reply({ error: 'not_found', error_description: "post was not found in our database", status: 404 });
-                        return [3 /*break*/, 3];
-                    case 2:
-                        e_5 = _a.sent();
-                        if (e_5.error && e_5.error_description && e_5.status)
-                            reply(e_5);
-                        else
-                            reply({ error: 'failed_to_comment', error_description: e_5.message, status: 500 });
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); });
-        eventHandler.on('addmedia', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
-            var doc, e_6;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, controllers_1.default.addMedia(e.body)];
-                    case 1:
-                        doc = _a.sent();
-                        if (doc)
-                            reply({ payload: doc, status: 200 });
-                        else
-                            reply({ error: 'not_found', error_description: "post was not found in our database", status: 404 });
-                        return [3 /*break*/, 3];
-                    case 2:
-                        e_6 = _a.sent();
-                        if (e_6.error && e_6.error_description && e_6.status)
-                            reply(e_6);
-                        else
-                            reply({ error: 'failed_to_update_media', error_description: e_6.message, status: 500 });
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
-                }
-            });
-        }); });
-        return [2 /*return*/];
+        switch (_a.label) {
+            case 0:
+                database = database_1.default.getInstance();
+                return [4 /*yield*/, database.connect(process.env.MONGO_SERVER || 'mongodb://localhost:27017')];
+            case 1:
+                _a.sent();
+                eventHandler = events_1.default.getInstance();
+                return [4 /*yield*/, eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379', 'posts_ch')];
+            case 2:
+                _a.sent();
+                eventHandler.on('list', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
+                    var doc, e_1;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 2, , 3]);
+                                return [4 /*yield*/, controllers_1.default.list(e.body)];
+                            case 1:
+                                doc = _a.sent();
+                                reply({ payload: doc, status: 200 });
+                                return [3 /*break*/, 3];
+                            case 2:
+                                e_1 = _a.sent();
+                                if (e_1.error && e_1.error_description && e_1.status)
+                                    reply(e_1);
+                                else
+                                    reply({ error: 'failed_to_fetch', error_description: e_1.message, status: 500 });
+                                return [3 /*break*/, 3];
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                }); });
+                eventHandler.on('single', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
+                    var doc, e_2;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 2, , 3]);
+                                return [4 /*yield*/, controllers_1.default.single(e.body)];
+                            case 1:
+                                doc = _a.sent();
+                                reply({ payload: doc, status: 200 });
+                                return [3 /*break*/, 3];
+                            case 2:
+                                e_2 = _a.sent();
+                                if (e_2.error && e_2.error_description && e_2.status)
+                                    reply(e_2);
+                                else
+                                    reply({ error: 'failed_to_fetch', error_description: e_2.message, status: 500 });
+                                return [3 /*break*/, 3];
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                }); });
+                eventHandler.on('create', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
+                    var doc, e_3;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 2, , 3]);
+                                return [4 /*yield*/, controllers_1.default.create(e.body, e.user)];
+                            case 1:
+                                doc = _a.sent();
+                                if (doc)
+                                    reply({ payload: doc, status: 201 });
+                                else
+                                    reply({ error: 'failed_to_create', error_description: 'service returned an empty response', status: 500 });
+                                return [3 /*break*/, 3];
+                            case 2:
+                                e_3 = _a.sent();
+                                if (e_3.error && e_3.error_description && e_3.status)
+                                    reply(e_3);
+                                else
+                                    reply({ error: 'failed_to_create', error_description: e_3.message, status: 500 });
+                                return [3 /*break*/, 3];
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                }); });
+                eventHandler.on('delete', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
+                    var doc, e_4;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 2, , 3]);
+                                return [4 /*yield*/, controllers_1.default.delete(e.body)];
+                            case 1:
+                                doc = _a.sent();
+                                if (doc)
+                                    reply({ payload: doc, status: 201 });
+                                else
+                                    reply({ error: 'not_found', error_description: "post was not found in our database", status: 404 });
+                                return [3 /*break*/, 3];
+                            case 2:
+                                e_4 = _a.sent();
+                                if (e_4.error && e_4.error_description && e_4.status)
+                                    reply(e_4);
+                                else
+                                    reply({ error: 'failed_to_delete', error_description: e_4.message, status: 500 });
+                                return [3 /*break*/, 3];
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                }); });
+                eventHandler.on('modify', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
+                    var doc, e_5;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 2, , 3]);
+                                return [4 /*yield*/, controllers_1.default.modify(e.body)];
+                            case 1:
+                                doc = _a.sent();
+                                if (doc)
+                                    reply({ payload: doc, status: 200 });
+                                else
+                                    reply({ error: 'not_found', error_description: "post was not found in our database", status: 404 });
+                                return [3 /*break*/, 3];
+                            case 2:
+                                e_5 = _a.sent();
+                                if (e_5.error && e_5.error_description && e_5.status)
+                                    reply(e_5);
+                                else
+                                    reply({ error: 'failed_to_update', error_description: e_5.message, status: 500 });
+                                return [3 /*break*/, 3];
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                }); });
+                eventHandler.on("addcomment", function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
+                    var doc, e_6;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 2, , 3]);
+                                return [4 /*yield*/, controllers_1.default.addComment(e.body)];
+                            case 1:
+                                doc = _a.sent();
+                                if (doc)
+                                    reply({ payload: doc, status: 200 });
+                                else
+                                    reply({ error: 'not_found', error_description: "post was not found in our database", status: 404 });
+                                return [3 /*break*/, 3];
+                            case 2:
+                                e_6 = _a.sent();
+                                if (e_6.error && e_6.error_description && e_6.status)
+                                    reply(e_6);
+                                else
+                                    reply({ error: 'failed_to_comment', error_description: e_6.message, status: 500 });
+                                return [3 /*break*/, 3];
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                }); });
+                eventHandler.on('addmedia', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
+                    var doc, e_7;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 2, , 3]);
+                                return [4 /*yield*/, controllers_1.default.addMedia(e.body)];
+                            case 1:
+                                doc = _a.sent();
+                                if (doc)
+                                    reply({ payload: doc, status: 200 });
+                                else
+                                    reply({ error: 'not_found', error_description: "post was not found in our database", status: 404 });
+                                return [3 /*break*/, 3];
+                            case 2:
+                                e_7 = _a.sent();
+                                if (e_7.error && e_7.error_description && e_7.status)
+                                    reply(e_7);
+                                else
+                                    reply({ error: 'failed_to_update_media', error_description: e_7.message, status: 500 });
+                                return [3 /*break*/, 3];
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                }); });
+                logger_1.logger.warn("Process instantiated in environment " + process.env.NODE_ENV);
+                return [2 /*return*/];
+        }
     });
 }); };
 run().catch(console.error);

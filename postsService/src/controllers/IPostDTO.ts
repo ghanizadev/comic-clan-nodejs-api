@@ -1,8 +1,8 @@
 export interface IPostDTO {
-    userId: string;
+    user : any;
     description: string;
     body: string;
-    comments?: string[];
+    comments : string[];
     media?: string[];
     updatedAt?: string;
     createdAt?: string;

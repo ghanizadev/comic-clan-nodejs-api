@@ -1,49 +1,15 @@
-import Database from '../database';
 import HTTPError from '../errors';
+import Comment from '../models/commentsSchema';
+import { ICommentAddCommentOptions } from './ICommentAddCommentOptions';
+import { ICommentModifyOptions } from './ICommentModifyOptions';
+import { ICommentListOptions } from './ICommentListOptions';
+import { ICommentDeleteOptions } from './ICommentDeleteOptions';
+import { ICommentCreateOptions } from './ICommentCreateOptions';
+import { ICommentDTO } from './ICommentDTO';
+import EventHandler from '../events';
+import { IComment } from '../models/IComment';
 
-const Comment = Database.getInstance().getModel();
-
-export interface ICommentDTO {
-    userId: string;
-    body : string;
-    media ?: string[];
-    comments ?: string[];
-    updatedAt ?: string;
-    createdAt ?: string;
-    _id : string;
-    _v : number;
-}
-
-export interface ICommentCreateOptions {
-    userId: string;
-    description : string;
-    body : string;
-    media ?: string[];
-}
-
-export interface ICommentDeleteOptions {
-    _id : string;
-}
-export interface ICommentListOptions {
-    query : {
-        _id ?: string;
-    };
-    pagination ?: any;
-}
-
-export interface ICommentModifyOptions {
-    _id : string;
-    content : {
-        description : string;
-        body : string;
-        media ?: string[];
-    };
-}
-
-export interface ICommentAddCommentOptions {
-    id: string;
-    commentId: string;
-}
+const eventHandler = EventHandler.getInstance();
 
 export default {
     async create(body : ICommentCreateOptions) : Promise<ICommentDTO | void> {
@@ -69,28 +35,82 @@ export default {
         })
     },
     async list(body : ICommentListOptions) : Promise<ICommentDTO[]> {
-        let comments = await Comment.find(body.query).exec();
+        let queryComments = await Comment.find(body.query);
 0
-        const results : ICommentDTO[] = comments.map(comment => {
-            const { userId, body, media, comments, createdAt, updatedAt, _id, _v} = comment;
+        const results =
+            queryComments.map(async (comment : IComment) => {
+                const { userId, body, media, createdAt, updatedAt, _id, _v} = comment;
 
-            const result : ICommentDTO = {
-                userId,
-                body,
-                media,
-                createdAt,
-                updatedAt,
-                _id,
-                _v
-            };
+                const result : ICommentDTO = {
+                    body,
+                    media,
+                    createdAt,
+                    updatedAt,
+                    _id,
+                    _v
+                };
 
-            if(comment.acceptComments)
-                result.comments = comments;
+                eventHandler.publish('users_ch', {
+                    event: 'list',
+                    body: {query : { _id : userId }}
+                }).then((reply) => {
+                    const user = reply.payload.shift();
 
-            return result
-        })
+                    delete user.password;
+                    delete user.active;
 
-        return results;
+                    delete comment.userId;
+
+                    result.user = user;
+                })
+                .catch(e => {
+                    console.log(e);
+                    throw new HTTPError(e);
+                })
+
+                
+                if(Array.isArray(comment.comments) && comment.acceptComments){
+                    const subcommentsPromises : Promise<any>[] = [];
+
+                    result.comments = await Comment.find({_id: { $in: comment.comments as string[]}})
+                    result.comments.forEach((comment : any) => {
+
+                        const promise =
+                            new Promise((resolve : any, reject : any) => {
+
+                                eventHandler.publish('users_ch', {
+                                    event: 'list',
+                                    body: {query : { _id : comment.userId }}
+                                }).then((reply) => {
+                                    const user = reply.payload.shift();
+
+                                    delete user.password;
+                                    delete user.acive;
+
+                                    const before = comment.toObject()
+                                    delete before.userId;
+                                    
+                                    const res : ICommentDTO = {
+                                        ...before,
+                                        user
+                                    }
+
+                                    resolve(res);
+                                })
+                                .catch(reject)
+                            })
+
+                        subcommentsPromises.push(promise);
+                    })
+
+                    result.comments = await Promise.all(subcommentsPromises);
+
+                }        
+
+                return result
+            })
+
+        return Promise.all(results);
     },
 
     async modify(modifiedComment : ICommentModifyOptions) : Promise<ICommentDTO> {
@@ -110,7 +130,6 @@ export default {
 
         return {
             _id,
-            userId,
             body,
             media,
             comments,
@@ -146,7 +165,6 @@ export default {
 
         return {
             _id,
-            userId,
             body,
             media,
             comments,
@@ -171,7 +189,6 @@ export default {
 
         return {
             _id,
-            userId,
             body,
             media,
             comments,

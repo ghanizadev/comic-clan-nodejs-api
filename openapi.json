@@ -1,0 +1,1821 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "ComicClan",
+        "description": "An complete API made to serve new upcoming ComicClan social network",
+        "contact": {
+            "name": "Jean Melo",
+            "email": "jf.melo6@gmail.com"
+        },
+        "version": "0.0.1-oas3"
+    },
+    "servers": [
+        {
+            "url": "https://virtserver.swaggerhub.com/ghanizadev/comic-clan/1.0.0"
+        }
+    ],
+    "security": [
+        {
+            "OAuth2 Authentication": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "OAuth2 authentication"
+        },
+        {
+            "name": "Users",
+            "description": "User's resource"
+        },
+        {
+            "name": "Posts",
+            "description": "Post's resource"
+        },
+        {
+            "name": "Comments",
+            "description": "Comment's resource"
+        }
+    ],
+    "paths": {
+        "/oauth/token": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get an access token",
+                "description": "Issues a new access token to a given user and password.",
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/body"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK - Operation completed successfully",
+                        "headers": {
+                            "Content-Type": {
+                                "description": "Media type used in this response",
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "type": "string",
+                                    "default": "application/x-www-form-urlencoded"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Token"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Request is malformed, missing fields or contains invalid headers.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Provided client Id and client secret does not match or they were not set in basic authentication.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type - Request is contains an unsupported media type. Currently supported are \"application/json\", \"application/x-www-form-urlencoded\" and \"form-data\". Check each endpoint documentation to see what content-type you should use.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Basic Authentication": []
+                    }
+                ]
+            }
+        },
+        "/oauth/revoke": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Revoke a refresh token",
+                "description": "This is an example operation to show how security is applied to the call.",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication": []
+                    }
+                ]
+            }
+        },
+        "/oauth/signature": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "JWK public certificate",
+                "description": "JWT containing public certificae used to sign JWT access tokens.",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/jwk+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JWK"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Basic Authentication": []
+                    }
+                ]
+            }
+        },
+        "/users": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get all users",
+                "description": "Shows all registered users.",
+                "responses": {
+                    "200": {
+                        "description": "OK - Operation completed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Provided client Id and client secret does not match or they were not set in basic authentication.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication": ["profile"]
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create a new user",
+                "description": "Creates a user by providing email, name and password.",
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/CreateAlterUser"
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created - User was successfully added to the system.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Request is malformed, missing fields or contains invalid headers.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Provided client Id and client secret does not match or they were not set in basic authentication.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type - Request is contains an unsupported media type. Currently supported are \"application/json\", \"application/x-www-form-urlencoded\" and \"form-data\". Check each endpoint documentation to see what content-type you should use.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "Basic Authentication": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete an user",
+                "description": "Remove your own account from database.",
+                "responses": {
+                    "204": {
+                        "description": "No Content - User was succesfully removed."
+                    },
+                    "400": {
+                        "description": "Bad Request - Request is malformed, missing fields or contains invalid headers.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - It is only possible to delete your own account.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{userId}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get an user",
+                "description": "Shows user's information",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "User's unique ID",
+                        "schema":{
+                            "type": "string",
+                            "format": "hex"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK - Operation completed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - \"profile\" is not included in your scope",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication": ["profile"]
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Alter a user",
+                "description": "Change user's data.",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "description": "User's unique ID",
+                        "schema":{
+                            "type": "string",
+                            "format": "hex"
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateAlterPost"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created - User was successfully changed.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Request is malformed, missing fields or contains invalid headers.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - It is only possible to change your own data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type - Request is contains an unsupported media type. It must be \"application/json\".",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/posts": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get all posts",
+                "description": "It includes all comments and media attached to its posts. It can be used as \"feed\" as well.",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Current post's page",
+                        "schema":{
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Amount of posts per page",
+                        "schema":{
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Amount of posts skipped in first page",
+                        "schema":{
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sort posts by date or description. It can be ascending e.g:\"sort=createdAt\" or descending e.g: \"sort=-createdAt\"",
+                        "schema":{
+                            "type": "string",
+                            "enum": [
+                                "createdAt",
+                                "updatedAt",
+                                "description"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK - Operation successfully completed.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedPosts"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Request is malformed, missing fields or contains invalid headers.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - It is only possible to change your own data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type - Request is contains an unsupported media type. It must be \"application/json\".",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Create a post",
+                "description": "Create a single post.",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateAlterPost"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created - Post was successfully created.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedPosts"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Request is malformed, missing fields or contains invalid headers.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - It is only possible to change your own data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type - Request is contains an unsupported media type. It must be \"application/json\".",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication": []
+                    }
+                ]
+            }
+        },
+        "/posts/{postId}":{
+            "put": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Alter a post",
+                "description": "Change a post data, including media assiciation.",
+                "parameters": [
+                    {
+                        "name": "postId",
+                        "in": "path",
+                        "description": "Post unique ID",
+                        "schema": {
+                            "type": "string",
+                            "format": "hex"
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json":{
+                            "schema":{
+                                "$ref": "#/components/schemas/CreateAlterPost"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created - Post was successfully changed.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedPosts"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - \"posts\" is not included in your scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Delete a post",
+                "description": "Completly remove a post from database. This action is not reversible.",
+                "parameters": [
+                    {
+                        "name": "postId",
+                        "in": "path",
+                        "description": "Post unique ID",
+                        "schema":{
+                            "type": "string",
+                            "format": "hex"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK - Post was successfully deleted.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Post"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Request is malformed, missing fields or contains invalid headers.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - It is only possible to delete your own posts",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{postId}/comment":{
+            "post": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Comment to a post",
+                "description": "Submits a new comment to a post.",
+                "parameters": [
+                    {
+                        "name": "postId",
+                        "in": "path",
+                        "description": "Post unique ID",
+                        "schema": {
+                            "type": "string",
+                            "format": "hex"
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json":{
+                            "schema":{
+                                "$ref": "#/components/schemas/CreateAlterComment"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created - Post was successfully changed.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Request is malformed, missing fields or contains invalid headers.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type - Request is contains an unsupported media type. It must be \"application/json\".",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication" : ["feed", "comment"]
+                    }
+                ]
+            }
+        },
+        "/posts/{postId}/subscribe":{
+            "post": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Subscribe to a post",
+                "description": "Subscribes yourself to receive an email at any post update.",
+                "parameters": [
+                    {
+                        "name": "postId",
+                        "in": "path",
+                        "description": "Post unique ID",
+                        "schema": {
+                            "type": "string",
+                            "format": "hex"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content - Subscribed successfully to this post."
+                    },
+                    "401": {
+                        "description": "Unauthorized - \"posts\" is not included in your scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/comments": {
+            "get": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Get all comments",
+                "description": "There is no sense to randomly list comments. But it is exposed for analitics and searching purposes.",
+                "responses": {
+                    "200": {
+                        "description": "OK - Operation completed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - \"comments\" is not included in your scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication": ["comment"]
+                    }
+                ]
+            }
+        },
+        "/comments/{commentId}":{
+            "get": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Get a comment",
+                "description": "Get a comment including media.",
+                "parameters": [
+                    {
+                        "name": "commentId",
+                        "in": "path",
+                        "description": "Comment's unique ID",
+                        "schema": {
+                            "type": "string",
+                            "format": "hex"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK - Operation completed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - \"comments\" is not included in your scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication": ["comment"]
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Alter a comment",
+                "description": "It can be a comment or a reply.",
+                "parameters": [
+                    {
+                        "name": "commentId",
+                        "in": "path",
+                        "description": "Comment's unique ID",
+                        "schema": {
+                            "type": "string",
+                            "format": "hex"
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json":{
+                            "schema":{
+                                "$ref": "#/components/schemas/CreateAlterComment"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created - Comment successfully changed.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - \"comments\" is not included in your scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type - Request is contains an unsupported media type. It must be \"application/json\".",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication": ["comment"]
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Deletes a comment",
+                "description": "Completly removes a comment. This operetion is not reversible.",
+                "parameters": [
+                    {
+                        "name": "commentId",
+                        "in": "path",
+                        "description": "Comment's unique ID",
+                        "schema": {
+                            "type": "string",
+                            "format": "hex"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK - Comment deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - \"comments\" is not included in your scope or this comment is not yours.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication": ["comment"]
+                    }
+                ]
+            }
+        },
+        "/comments/{commentId}/reply":{
+            "post": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Reply to a comment",
+                "description": "Replies to a comment. If you desire to comment a post, see \"/post/{postId}/comment - Comment a post\".",
+                "parameters": [
+                    {
+                        "name": "commentId",
+                        "in": "path",
+                        "description": "Comment's unique ID",
+                        "schema": {
+                            "type": "string",
+                            "format": "hex"
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json":{
+                            "schema":{
+                                "$ref": "#/components/schemas/CreateAlterComment"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created - Comment successfully added.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - \"comments\" is not included in your scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type - Request is contains an unsupported media type. It must be \"application/json\".",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/upload": {
+            "post": {
+                "summary": "Upload a media",
+                "description": "Add media to posts and comments",
+                "tags":[
+                    "Upload"
+                ],
+                "requestBody":{
+                    "content": {
+                        "multipart/form-data":{
+                            "schema":{
+                                "type": "object",
+                                "properties": {
+                                    "media":{
+                                        "type": "string",
+                                        "format": "binary",
+                                        "description": "Image or video file to upload"
+                                    },
+                                    "rel":{
+                                        "type": "string",
+                                        "description": "ID of post or comment."
+                                    }
+                                },
+                                "required": ["media"]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created - Media successfully added.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "media":{
+                                            "type": "string"
+                                        },
+                                        "rel": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - \"comments\" and \"posts\" are not included in your scope.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type - Request is contains an unsupported media type.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - You achieved the maximum requests per second.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Request timeout for new requests, in seconds.",
+                                "style": "simple",
+                                "explode": false,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                
+                },
+                "security": [
+                    {
+                        "OAuth2 Authentication": ["posts", "comments"]
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "PaginatedPosts": {
+                "type": "object",
+                "properties": {
+                    "docs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Post"
+                        }
+                    },
+                    "totalDocs": {
+                        "type": "number",
+                        "example": 20
+                    },
+                    "limit": {
+                        "type": "number",
+                        "default": 10
+                    },
+                    "totalPages": {
+                        "type": "number",
+                        "example": 2
+                    },
+                    "page": {
+                        "type": "number",
+                        "example": 1
+                    },
+                    "pagingCounter": {
+                        "type": "number",
+                        "example": 1
+                    },
+                    "hasPrevPage": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "hasNextPage": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "prevPage": {
+                        "type": "number"
+                    },
+                    "nextPage": {
+                        "type": "number",
+                        "example": 2
+                    }
+                },
+                "xml": {
+                    "name": "PaggingPost"
+                }
+            },
+            "User": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "type": "string",
+                        "format": "hex"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "xml": {
+                    "name": "PaginatedUser"
+                }
+            },
+            "Post": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "type": "string",
+                        "format": "hex"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "comments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Comment"
+                        }
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "xml": {
+                    "name": "Post"
+                }
+            },
+            "CreateAlterPost": {
+                "type": "object",
+                "properties": {
+                    "description": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "xml": {
+                    "name": "Post"
+                }
+            },
+            "CreateAlterComment": {
+                "type": "object",
+                "properties": {
+                    "body": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "xml": {
+                    "name": "CreateAlterComment"
+                }
+            },
+            "Comment": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "type": "string",
+                        "format": "hex"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "comments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Reply"
+                        }
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "xml": {
+                    "name": "Post"
+                }
+            },
+            "Reply": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "type": "string",
+                        "format": "hex"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "xml": {
+                    "name": "Post"
+                }
+            },
+            "Error": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string"
+                    },
+                    "error_description": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "number"
+                    }
+                },
+                "xml": {
+                    "name": "Error"
+                }
+            },
+            "body": {
+                "type": "object",
+                "properties": {
+                    "grant_type": {
+                        "type": "string",
+                        "example": "password"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "user@domain.com"
+                    },
+                    "password": {
+                        "type": "string",
+                        "example": "password"
+                    },
+                    "scope": {
+                        "type": "string",
+                        "example": "*"
+                    }
+                },
+                "xml": {
+                    "name": "Authentication"
+                }
+            },
+            "Token": {
+                "type": "object",
+                "properties": {
+                    "access_token": {
+                        "type": "string"
+                    },
+                    "token_type": {
+                        "type": "string"
+                    },
+                    "refresh_token": {
+                        "type": "string"
+                    },
+                    "scope": {
+                        "type": "string"
+                    },
+                    "expires_in": {
+                        "type": "number"
+                    }
+                },
+                "example": {
+                    "token_type": "bearer",
+                    "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpmLm1lbG82QGdtYWlsLmNvbSIsImlkIjoiNWU5NzRhMTlmZmFlMTgwMDExM2Y3NmQ1IiwibmFtZSI6IkplYW4gRmVsaXBlIGRlIE1lbG8iLCJzY29wZSI6WyJmZWVkIiwicHJvZmlsZSIsInBvc3QiLCJjb21tZW50Il0sImlhdCI6MTU4Njk3MzI0MCwiZXhwIjoxNTg2OTc2ODQwLCJpc3MiOiI2YzllZDdkZC1hZTlmLTQ0NGItYTUwMy1iMGM0NjQ0YzUzNGQifQ.cXauhAjgkSble7OeAW7scIijCXhRv-D_L8iGQQofoXRw6lMrPa4KZPpp_D8D8LqWiGHdTdoFdvrAzja0np_d3bje2Gu1v5k_odcUEzR16ntEp-0RG4AB-xEa1nO3hRT4hn7le5WJOOKDS-Fc7icQSlWsfNVjn-M6BGjf6hzKCcLF1RG-RMkPTfVuS7CDfK8aU9zs5aBoswDHUNhqfgqVZsk42bsrx7CfAFZ4RhJ5fqd9IEyAZPgqLyt4lh9kNc30i-zaUfNIVl3iRcpZ7P53uETy-Rl_Frpc6iz2RN0JJt-2kwUDWamqIVkEPlfgkGXzBBHu5XmckLSdxu8IlqMBuQ",
+                    "expires_in": 3600,
+                    "refresh_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpmLm1lbG82QGdtYWlsLmNvbSIsImlkIjoiNWU5NzRhMTlmZmFlMTgwMDExM2Y3NmQ1IiwibmFtZSI6IkplYW4gRmVsaXBlIGRlIE1lbG8iLCJzY29wZSI6WyJmZWVkIiwicHJvZmlsZSIsInBvc3QiLCJjb21tZW50Il0sImlhdCI6MTU4Njk3MzI0MCwiaXNzIjoiNmM5ZWQ3ZGQtYWU5Zi00NDRiLWE1MDMtYjBjNDY0NGM1MzRkIn0.GP4OlB4AZc5Q9NYrmes530rvpHrHXBECaErw7ZeUJWbBl6fPoAbA0ABuWR4gNLeLw3lUEA-mD4jaTZCiKdAAwKai4KrV6KNkouWPtMO4X15Pzs3GEEhbk-zA6CLfmtVLqS2RV1Qnz_bi9R5ccjGlnMVde7eL_SEBGbuvXaiZNqc2DNpRL7WRKAxtr8kxMrouysRjBzbhjofnknA22vRQDqYLV6qYpZW77EmbZSNY-DPriEzJCJ1lXz5hS-hA9Qj2TUVR0whyP6j5SEMzi6HDOEPWrwKZelEpVkOeTfxPJUkFEwjFsXr9sAbbqxMllyfha5S9hvmJKnB2h_AGs3WncQ",
+                    "scope": [
+                        "feed",
+                        "profile",
+                        "post",
+                        "comment"
+                    ]
+                }
+            },
+            "JWK": {
+                "type": "object",
+                "properties": {
+                    "kty": {
+                        "type": "string",
+                        "example": "RSA"
+                    },
+                    "n": {
+                        "type": "string",
+                        "example": "x4aUv-JlGU702O8ZKAHWRlD0z-FCSnyuU7S3GWmISORvq8UfpfXEqkmVVqfYMRfXr4zTWPTWtqa9NTL8H81ebQ9MWwebdG-ZT_S8G13AveGu5E8lt9gtOAYTGObY29TiblbpAYIMpv2yL6wk5TYGGwyJ51bLk0q5F4fHpRZx6BldPCOkLWF1YJWd6kxiA8IYrGi2ofhOJuPOkCfXJP_vpOsDBpKig3i6OtuYYXi80x2eZBggSC5COj6AQ7JXGSzl_jE4FCywwxF46RPHC1PMlRiY9NSQY2ibDcuxWhdRZVZjXyixmM_1y-nR0tHgoGllakxSvzHffjHcaG0z0KxWMw"
+                    },
+                    "e": {
+                        "type": "string",
+                        "example": "AQAB"
+                    }
+                }
+            }
+        },
+        "requestBodies": {
+            "CreateAlterUser": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "email": {
+                                    "type": "string"
+                                },
+                                "password": {
+                                    "type": "string"
+                                }
+                            },
+                            "xml": {
+                                "name": "User"
+                            }
+                        }
+                    }
+                },
+                "required": true
+            }
+        },
+        "securitySchemes": {
+            "Basic Authentication": {
+                "type": "http",
+                "scheme": "basic"
+            },
+            "OAuth2 Authentication": {
+                "type": "oauth2",
+                "flows": {
+                    "password": {
+                        "tokenUrl": "https://localhost/oauth/token",
+                        "refreshUrl": "https://localhost/oauth/token",
+                        "scopes": {
+                            "feed": "allows reading feed resources",
+                            "post": "allows posting to user's feed",
+                            "profile": "allows reading, editing and deleting user's profile",
+                            "comment": "allows commenting in post resources"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

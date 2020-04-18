@@ -1,34 +1,17 @@
-export interface Message {
-    id?: string;
-    event: string;
-    from?: string;
-    body: any;
-    user ?: any;
-    replyTo?: string;
-}
-interface IResponseType {
-    from?: string;
-    replyTo?: string;
-    status: number;
-}
-export interface Reply extends IResponseType {
-    payload: object;
-}
-export interface HTTPError extends IResponseType {
-    error: string;
-    error_description: string;
-}
-export declare type ResponseType = Reply | HTTPError;
-export declare type Event = 'create' | 'modify' | 'delete' | 'list' | 'addcomment' | 'addmedia';
+import { Message } from './Message';
+import { Reply } from './Reply';
+import { HTTPError } from '../errors/HTTPError';
 export default class EventHandler {
+    private static instance;
     private consumer;
     private publisher;
     private channel;
-    private isListening;
     private eventListeners;
-    constructor(connectionString: string, channel?: string);
-    listen(channel?: string): Promise<void>;
-    on(event: Event, callback: (message: Message, reply: (response: ResponseType) => void) => void): void;
-    publish(channel: string | undefined, message: Message): Promise<ResponseType>;
+    private retry_strategy;
+    private constructor();
+    static getInstance(): EventHandler;
+    connect(connectionString: string, channel: string): Promise<void>;
+    on(event: Event, callback: (message: Message, reply: (response: Reply | HTTPError) => void) => void): void;
+    publish(channel: string | undefined, message: Message): Promise<Reply>;
 }
-export {};
+export declare type Event = 'create' | 'modify' | 'delete' | 'list' | 'single' | 'addmedia' | 'addcomment';

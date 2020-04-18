@@ -1,18 +1,9 @@
-import mongoose, {Document, Schema} from 'mongoose';
+import {Schema, model, Document} from 'mongoose';
+import pagination from 'mongoose-paginate-v2';
+import { IPost } from './IPost';
+import { IModel } from './IModel';
 
-export interface IPost extends Document {
-    userId: string;
-    description : string;
-    body : string;
-    media ?: string[];
-    comments : string[];
-    updatedAt ?: string;
-    createdAt ?: string;
-    _id : string;
-    _v : number;
-}
-
-const UserSchema = new Schema({
+const PostSchema = new Schema<IPost>({
     userId: { type: String , required: true },
     description: { type: String , required: true },
     body: { type: String , required: true },
@@ -20,4 +11,6 @@ const UserSchema = new Schema({
     comments: { type: [String] , default: [] }
 }, { timestamps: true, collection: 'posts' });
 
-export default mongoose.model<IPost>('Post', UserSchema);
+PostSchema.plugin(pagination); 
+
+export default model<IPost, IModel>('Post', PostSchema);

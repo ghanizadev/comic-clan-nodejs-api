@@ -28,7 +28,7 @@ export default class EventHandler {
 
     public static getInstance() {
         if(!EventHandler.instance){
-            EventHandler.instance = new this();
+            EventHandler.instance = new EventHandler();
         }
         return EventHandler.instance;
     }
@@ -106,8 +106,7 @@ export default class EventHandler {
                         res(message as Reply);
                     }
                 }
-                // this.consumer.addListener('message', listener);
-                console.log(this.consumer)
+                this.consumer.addListener('message', listener);
 
                 this.publisher.publish(channel, JSON.stringify(_message));
             } catch(e){
@@ -118,6 +117,4 @@ export default class EventHandler {
     }
 }
 
-export type Event = 'create' | 'modify' | 'delete' | 'list' | 'addmedia' | 'addcomment';
-
-export const eventHandler = EventHandler.getInstance();
+export type Event = 'create' | 'modify' | 'delete' | 'list' | 'single' | 'addmedia' | 'addcomment';

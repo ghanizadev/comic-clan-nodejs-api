@@ -2,20 +2,31 @@ import EventHandler from './events';
 import controller from './controllers';
 import dotenv from 'dotenv';
 import Database from './database';
+import { logger } from './utils/logger';
 
 dotenv.config();
 
 const run = async () => {
 
   const database = Database.getInstance();
-  await database.connect(process.env.MONGO_SERVER || 'mongodb://localhost:27017', 'post');
+  await database.connect(process.env.MONGO_SERVER || 'mongodb://localhost:27017');
 
-  const eventHandler = EventHandler.getInstance()
+  const eventHandler = EventHandler.getInstance();
   await eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379', 'posts_ch');
 
   eventHandler.on('list', async (e, reply) => {
     try {
       const doc = await controller.list(e.body);
+      reply({payload: doc, status: 200});
+    }catch(e) {
+      if(e.error && e.error_description && e.status) reply(e)
+      else reply({error: 'failed_to_fetch', error_description: e.message, status: 500});
+    }
+  });
+
+  eventHandler.on('single', async (e, reply) => {
+    try {
+      const doc = await controller.single(e.body);
       reply({payload: doc, status: 200});
     }catch(e) {
       if(e.error && e.error_description && e.status) reply(e)
@@ -79,6 +90,8 @@ const run = async () => {
       else reply({error: 'failed_to_update_media', error_description: e.message, status: 500});
     }
   });
+
+  logger.warn("Process instantiated in environment " + process.env.NODE_ENV);
 
 }
 

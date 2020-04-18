@@ -1,5 +1,6 @@
 import mongoose, {Mongoose, Model} from 'mongoose';
-import postsSchema, {IPost} from '../models/postsSchema';
+import postsSchema from '../models/postsSchema';
+import { IPost } from "../models/IPost";
 import { logger } from '../utils/logger';
 
 export default class Database {
@@ -15,8 +16,8 @@ export default class Database {
         return Database.instance;
     }
 
-    public async connect(connectionString : string, databaseName : string = 'comicclan') : Promise<Mongoose | void> {
-        const conn = connectionString + '/' + databaseName;
+    public async connect(connectionString : string) : Promise<Mongoose | void> {
+        const conn = connectionString + '/' + process.env.NODE_ENV;
 
         let count = 0;
 

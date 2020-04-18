@@ -1,51 +1,18 @@
-interface IPostReturn {
-    userId: string;
-    description: string;
-    body: string;
-    comments?: string[];
-    media?: string[];
-    updatedAt?: string;
-    createdAt?: string;
-    _id: string;
-    _v: number;
-}
-interface IPostCreateOptions {
-    userId: string;
-    description: string;
-    body: string;
-    media?: string[];
-}
-interface IPostDeleteOptions {
-    _id: string;
-}
-interface IPostListOptions {
-    query: {
-        _id?: string;
-    };
-    pagination?: any;
-}
-interface IPostModifyOptions {
-    _id: string;
-    content: {
-        description: string;
-        body: string;
-        media?: string[];
-    };
-}
-interface IPostAddCommentOptions {
-    _id: string;
-    commentsId: string | string[];
-}
-interface IPostAddMediaOptions {
-    _id: string;
-    photosURL: string | string[];
-}
+import { IPostDTO } from './IPostDTO';
+import { IPostPaginatedDTO } from './IPostPaginatedDTO';
+import { IPostCreateOptions } from './IPostCreateOptions';
+import { IPostDeleteOptions } from './IPostDeleteOptions';
+import { IPostAddCommentOptions } from "./IPostAddCommentOptions";
+import { IPostAddMediaOptions } from "./IPostAddMediaOptions";
+import { IPostModifyOptions } from "./IPostModifyOptions";
+import { IPostListOptions } from "./IPostListOptions";
 declare const _default: {
-    create(body: IPostCreateOptions): Promise<IPostReturn | null>;
-    list(body: IPostListOptions): Promise<IPostReturn[]>;
-    modify(modifiedPost: IPostModifyOptions): Promise<IPostReturn>;
-    addComment(modifiedPost: IPostAddCommentOptions): Promise<void | IPostReturn>;
-    addMedia(modifiedPost: IPostAddMediaOptions): Promise<void | IPostReturn>;
-    delete(deleteOptions: IPostDeleteOptions): Promise<IPostReturn | null>;
+    create(body: IPostCreateOptions, user: any): Promise<void | IPostDTO>;
+    list(body: IPostListOptions): Promise<IPostPaginatedDTO[]>;
+    single(body: IPostListOptions): Promise<IPostDTO>;
+    modify(modifiedPost: IPostModifyOptions): Promise<IPostDTO>;
+    addComment(modifiedPost: IPostAddCommentOptions): Promise<void | IPostDTO>;
+    addMedia(modifiedPost: IPostAddMediaOptions): Promise<void | IPostDTO>;
+    delete(deleteOptions: IPostDeleteOptions): Promise<IPostDTO>;
 };
 export default _default;

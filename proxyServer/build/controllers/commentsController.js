@@ -40,8 +40,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
-var axios_1 = __importDefault(require("axios"));
-var form_data_1 = __importDefault(require("form-data"));
+var errors_1 = __importDefault(require("../errors"));
 var polish_1 = __importDefault(require("../utils/polish"));
 var events_1 = __importDefault(require("../events"));
 var router = express_1.default.Router();
@@ -101,73 +100,62 @@ router.get('/:id', function (req, res, next) {
     })
         .catch(next);
 });
-// Create a new comment
-router.post('/', function (req, res, next) {
-    var form = new form_data_1.default();
-    eventHandler.publish('posts_ch', {
-        body: { query: { _id: req.body.postId } },
+// Comment to a comment
+router.post('/:commentId', function (req, res, next) {
+    eventHandler.publish('comments_ch', {
+        body: { query: { _id: req.params.commentId } },
         event: 'list',
     })
-        .then(function () { return __awaiter(void 0, void 0, void 0, function () {
-        var comment;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, eventHandler.publish('comments_ch', {
-                        body: req.body,
-                        event: 'create',
-                    })];
-                case 1:
-                    comment = _a.sent();
-                    console.log(comment);
-                    eventHandler.publish('posts_ch', {
-                        body: { _id: req.body.postId, commentId: comment.payload._id },
-                        event: 'addcomment',
-                    })
-                        .then(function (reply) {
-                        res.status(reply.status).send(polish_1.default(comment.payload));
-                    })
-                        .catch(next);
-                    return [2 /*return*/];
-            }
+        .then(function (_a) {
+        var payload = _a.payload;
+        return __awaiter(void 0, void 0, void 0, function () {
+            var comment;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (Array.isArray(payload) && payload.length === 0)
+                            throw new errors_1.default('invalid_request', 'Comment was not found or it was deleted', 404);
+                        return [4 /*yield*/, eventHandler.publish('comments_ch', {
+                                body: {
+                                    body: req.body.body,
+                                    media: req.body.media,
+                                    rel: req.params.commentId,
+                                    userId: req.user._id,
+                                    acceptComments: false
+                                },
+                                event: 'create',
+                            })];
+                    case 1:
+                        comment = _b.sent();
+                        return [4 /*yield*/, eventHandler.publish('comments_ch', {
+                                body: { id: req.params.commentId, commentId: comment.payload._id },
+                                event: 'addcomment',
+                            })
+                                .then(function (reply) {
+                                res.status(reply.status).send(polish_1.default(comment.payload));
+                            })
+                                .catch(next)];
+                    case 2:
+                        _b.sent();
+                        return [2 /*return*/];
+                }
+            });
         });
-    }); })
+    })
         .catch(next);
-    // if(Array.isArray(req.files)){;
-    //     req.files.forEach(file => {
-    //         form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
-    //     })
-    // }else {
-    //     form.append('media', req.file);
-    // }
-    // axios.post('http://localhost:3001/?id' + req.params.id, form, {headers: form.getHeaders(), validateStatus: (status) => status < 500 })
-    // .then(response => {
-    // })
-    // .catch(next);
 });
 // Alter a post
 router.put('/:id', function (req, res, next) {
-    var form = new form_data_1.default();
-    if (Array.isArray(req.files)) {
-        ;
-        req.files.forEach(function (file) {
-            form.append('media', file.buffer, { filename: file.originalname, contentType: file.mimetype });
-        });
-    }
-    axios_1.default.post('http://localhost:3001/?id' + req.params.id, form, { headers: form.getHeaders(), validateStatus: function (status) { return status < 500; } })
-        .then(function (response) {
-        req.body.media = response.data;
-        eventHandler.publish('comments_ch', {
-            body: { _id: req.params.id, content: req.body },
-            event: 'modify',
-        })
-            .then(function (reply) {
-            res.status(reply.status).send(polish_1.default(reply));
-        })
-            .catch(next);
+    eventHandler.publish('comments_ch', {
+        body: { _id: req.params.id, content: req.body },
+        event: 'modify',
+    })
+        .then(function (reply) {
+        res.status(reply.status).send(polish_1.default(reply));
     })
         .catch(next);
 });
-// Delete a post
+// Delete a comment
 router.delete('/:id', function (req, res, next) {
     eventHandler.publish('comments_ch', {
         body: { _id: req.params.id },
@@ -178,7 +166,7 @@ router.delete('/:id', function (req, res, next) {
     })
         .catch(next);
 });
-// Subscribe to a post
+// Subscribe to a comment
 router.post('/:id', function (req, res, next) {
     eventHandler.publish('comments_ch', {
         body: { _id: req.params.id },

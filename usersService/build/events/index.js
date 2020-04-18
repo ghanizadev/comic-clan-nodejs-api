@@ -45,50 +45,60 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var redis = __importStar(require("redis"));
 var uuid = __importStar(require("uuid"));
-;
+var logger_1 = require("../utils/logger");
 var EventHandler = /** @class */ (function () {
-    function EventHandler(connectionString, channel) {
-        this.isListening = false;
+    function EventHandler() {
         this.eventListeners = [];
-        var retry_strategy = this.retry_strategy;
-        console.log('Connecting to Redis server...');
-        this.channel = channel;
-        this.consumer = redis.createClient({ retry_strategy: retry_strategy, url: connectionString });
-        this.publisher = redis.createClient({ retry_strategy: retry_strategy, url: connectionString });
     }
     EventHandler.prototype.retry_strategy = function (options) {
         if (options.attempt > 30) {
-            console.log('Redis server is not responding...');
+            logger_1.logger.warn('Redis server is not responding...');
             process.exit(1);
         }
         if (options.error && options.error.code === "ECONNREFUSED") {
-            console.log('Connection refused, trying again...[%s]', options.attempt);
             return 1000;
         }
         return 1000;
     };
-    EventHandler.prototype.listen = function (channel) {
+    EventHandler.getInstance = function () {
+        if (!EventHandler.instance) {
+            EventHandler.instance = new this();
+        }
+        return EventHandler.instance;
+    };
+    EventHandler.prototype.connect = function (connectionString, channel) {
         return __awaiter(this, void 0, void 0, function () {
+            var retry_strategy;
             var _this = this;
             return __generator(this, function (_a) {
-                if (channel)
-                    this.channel = channel;
-                this.consumer.subscribe(this.channel);
-                console.log('Listening to channel "%s"', this.channel);
-                this.consumer.on('message', function (ch, msg) {
-                    var decoded = JSON.parse(msg);
-                    console.log('Message received from "%s"', decoded.from);
-                    _this.eventListeners.forEach(function (event) {
-                        if (decoded.event === event[0]) {
-                            event[2] = decoded;
-                            event[1](decoded, function (response) {
-                                response.replyTo = decoded.id;
-                                response.from = _this.channel;
-                                _this.publisher.publish(decoded.from, JSON.stringify(response));
-                                console.log("Replying... [%s]", decoded.from);
-                            });
-                        }
+                retry_strategy = this.retry_strategy;
+                logger_1.logger.info('Connecting to Redis server...');
+                this.channel = channel;
+                this.consumer = redis.createClient({ retry_strategy: retry_strategy, url: connectionString });
+                this.publisher = redis.createClient({ retry_strategy: retry_strategy, url: connectionString });
+                this.consumer.once('connect', function () {
+                    logger_1.logger.info('Consumer connected!');
+                    logger_1.logger.info("Subscribing to channel \"" + _this.channel + "\"...");
+                    _this.consumer.subscribe(_this.channel);
+                    _this.consumer.on('subscribe', function (ch) { return logger_1.logger.info("Consumer subscribed to \"" + ch + "\""); });
+                    _this.consumer.on('message', function (ch, msg) {
+                        var decoded = JSON.parse(msg);
+                        logger_1.logger.info("Message received from \"" + decoded.from + "\"");
+                        _this.eventListeners.forEach(function (event) {
+                            if (decoded.event === event[0]) {
+                                event[2] = decoded;
+                                event[1](decoded, function (response) {
+                                    response.replyTo = decoded.id;
+                                    response.from = _this.channel;
+                                    _this.publisher.publish(decoded.from, JSON.stringify(response));
+                                    logger_1.logger.info("Replying... [" + decoded.from + "]");
+                                });
+                            }
+                        });
                     });
+                });
+                this.publisher.once('connect', function () {
+                    logger_1.logger.info('Publisher connected!');
                 });
                 return [2 /*return*/];
             });
@@ -100,40 +110,30 @@ var EventHandler = /** @class */ (function () {
     EventHandler.prototype.publish = function (channel, message) {
         if (channel === void 0) { channel = this.channel; }
         return __awaiter(this, void 0, void 0, function () {
-            var _message, id;
             var _this = this;
             return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!!this.isListening) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.listen()];
-                    case 1:
-                        _a.sent();
-                        _a.label = 2;
-                    case 2:
-                        _message = message;
-                        id = uuid.v4();
-                        console.log('Publishing with ID "%s" to channel "%s"', id, channel);
-                        _message.id = id;
-                        _message.from = this.channel;
-                        return [2 /*return*/, new Promise(function (res, rej) {
-                                try {
-                                    var listener_1 = function (_, msg) {
-                                        var message = JSON.parse(msg);
-                                        if (message.replyTo === id) {
-                                            _this.consumer.removeListener('message', listener_1);
-                                            res(message);
-                                        }
-                                    };
-                                    _this.consumer.addListener('message', listener_1);
-                                    _this.publisher.publish(channel, JSON.stringify(_message));
+                return [2 /*return*/, new Promise(function (res, rej) {
+                        try {
+                            var _message = message;
+                            var id_1 = uuid.v4();
+                            logger_1.logger.info("Publishing with id=" + id_1 + " to channel=" + channel);
+                            _message.id = id_1;
+                            _message.from = _this.channel;
+                            var listener_1 = function (_, msg) {
+                                var message = JSON.parse(msg);
+                                if (message.replyTo === id_1) {
+                                    _this.consumer.removeListener('message', listener_1);
+                                    res(message);
                                 }
-                                catch (e) {
-                                    console.log(e);
-                                    rej(e);
-                                }
-                            })];
-                }
+                            };
+                            _this.consumer.addListener('message', listener_1);
+                            _this.publisher.publish(channel, JSON.stringify(_message));
+                        }
+                        catch (e) {
+                            logger_1.logger.error(e);
+                            rej(e);
+                        }
+                    })];
             });
         });
     };

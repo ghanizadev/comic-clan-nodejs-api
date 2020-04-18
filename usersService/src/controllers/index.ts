@@ -7,9 +7,13 @@ const User = Database.getInstance().getModel();
 export default {
     async create(body : IUserCreateOptions) : Promise<IUser | void> {
         body.email = body.email.trim();
-        const findQuery = await User.findOne({email: body.email, active : false}).exec();
+        const findQuery = await User.findOne({email: body.email}).exec();
 
         if(findQuery) {
+            if(findQuery.active === true){
+                throw new HTTPError('invalid_request', `User "${findQuery.email}" is already taken`, 400);
+            }
+
             findQuery.set({active: true, password: body.password});
 
             return findQuery.save()
@@ -17,7 +21,14 @@ export default {
                 return doc;
             })
             .catch(err => {
-                throw new HTTPError('failed_to_save', err.message, 400);
+                if(err.name === 'ValidationError' || err.name === 'ValidatorError'){
+                    const messages : string[] = [];
+
+                    Object.keys(err.errors).forEach(key => messages.push(err.errors[key].message))
+
+                    throw new HTTPError('invalid_request', messages.join(' '), 400);
+                } else                    
+                    throw new HTTPError(err);
             })
         } else {
             const user = new User(body);
@@ -27,7 +38,14 @@ export default {
                 return doc;
             })
             .catch(err => {
-                throw new HTTPError('failed_to_save', err.message, 400);
+                if(err.name === 'ValidationError' || err.name === 'ValidatorError'){
+                    const messages : string[] = [];
+
+                    Object.keys(err.errors).forEach(key => messages.push(err.errors[key].message))
+
+                    throw new HTTPError('invalid_request', messages.join(' '), 400);
+                } else                    
+                    throw new HTTPError(err);
             })
         }
 

@@ -14,7 +14,7 @@ const run = async () => {
   eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'users_ch');
 
   const db = Database.getInstance();
-  db.connect(process.env.MONGO_SERVER || 'mongodb://localhost:27017', 'users')
+  db.connect(process.env.MONGO_SERVER || 'mongodb://localhost:27017')
 
   eventHandler.on('list', async (e, reply) => {
     try {
@@ -67,6 +67,8 @@ const run = async () => {
       else reply({error: 'failed_to_update', error_description: e.message, status: 500});
     }
   });
+
+  logger.warn('Process instantited in environment ' + process.env.NODE_ENV)
 }
 
 run().catch(console.error);

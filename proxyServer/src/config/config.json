@@ -18,33 +18,41 @@
             "salt": ""
         }
     },
-    "general":{
+    "system":{
         "clients": [
         ],
         "administration":{
             "username": "admin",
             "passsword": "admin"
-        }
+        },
+        "whitelist": [
+
+        ]
     },
     "email":{
         "smtp": "",
         "port": "",
         "username": "",
-        "password": ""
+        "password": "",
+        "tls": false,
+        "sendEmail":{
+            "to": "",
+            "subject": "",
+            "body": ""
+        }
     },
     "fileUploader": {
+        "maxSize": {
+            "*": 5000
+        },
         "garbageColector":{
-            "interval": 1,
+            "interval": 24,
             "active": true
         },
         "allowedMedia":{
             "formats": ["jpg", "png", "mp4", "gif"]
         },
-        "posts":{
-            "maxFilesPerPost": 5
-        },
-        "comments":{
-            "maxFilesPerComment": 5
-        }
+        "maxFilesPerPost": 5,
+        "maxFilesPerComment": 5
     }
 }

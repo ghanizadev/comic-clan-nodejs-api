@@ -6,7 +6,7 @@
 
 - Configuration
 
-  - [Management interface](management.md)
+  - [Administration dashboard](admin.md)
 
 - Discover
 

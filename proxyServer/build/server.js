@@ -44,6 +44,9 @@ var logger_1 = require("./utils/logger");
 var events_1 = __importDefault(require("./events"));
 var redis_1 = __importDefault(require("redis"));
 var v4_1 = __importDefault(require("uuid/v4"));
+var https_1 = __importDefault(require("https"));
+var fs_1 = __importDefault(require("fs"));
+var path_1 = __importDefault(require("path"));
 var run = function () { return __awaiter(void 0, void 0, void 0, function () {
     var retry_strategy, db;
     return __generator(this, function (_a) {
@@ -64,7 +67,7 @@ var run = function () { return __awaiter(void 0, void 0, void 0, function () {
                 db = redis_1.default.createClient({ url: process.env.REDIS_SERVER || 'redis://localhost:6379', retry_strategy: retry_strategy });
                 db.once('connect', function () {
                     logger_1.logger.info('Checking from credentials...');
-                    db.hgetall('default_client', function (error, keys) {
+                    db.hgetall('clients', function (error, keys) {
                         if (error)
                             return;
                         var auth = { id: '', secret: '' };
@@ -82,7 +85,7 @@ var run = function () { return __awaiter(void 0, void 0, void 0, function () {
                                 var clientSecret = v4_1.default();
                                 logger_1.logger.warn("CLIENT_ID=" + clientID);
                                 logger_1.logger.warn("CLIENT_SECRET=" + clientSecret);
-                                db.hset('default_client', clientID, clientSecret);
+                                db.hset('clients', clientID, clientSecret);
                             }
                         }
                         else {
@@ -91,9 +94,13 @@ var run = function () { return __awaiter(void 0, void 0, void 0, function () {
                             var clientSecret = v4_1.default();
                             logger_1.logger.warn("CLIENT_ID=" + clientID);
                             logger_1.logger.warn("CLIENT_SECRET=" + clientSecret);
-                            db.hset('default_client', clientID, clientSecret);
+                            db.hset('clients', clientID, clientSecret);
                         }
-                        app_1.default.listen(process.env.PORT || 3000, function () {
+                        var options = {
+                            key: fs_1.default.readFileSync(path_1.default.resolve(__dirname, 'keys', 'server.pem')),
+                            cert: fs_1.default.readFileSync(path_1.default.resolve(__dirname, 'keys', 'server.crt'))
+                        };
+                        https_1.default.createServer(options, app_1.default).listen(process.env.PORT || 3000, function () {
                             logger_1.logger.info("Server started at port " + (process.env.PORT || 3000));
                         });
                     });

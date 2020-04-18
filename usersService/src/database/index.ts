@@ -15,8 +15,8 @@ export default class Database {
         return Database.instance;
     }
 
-    public async connect(connectionString : string, databaseName : string = 'comicclan') : Promise<Mongoose | void> {
-        const conn = connectionString + '/' + databaseName;
+    public async connect(connectionString : string) : Promise<Mongoose | void> {
+        const conn = connectionString + '/' + process.env.NODE_ENV;
 
         let count = 0;
 

@@ -51,10 +51,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var database_1 = __importDefault(require("../database"));
-var error_1 = __importDefault(require("../error"));
-var database = new database_1.default('mongodb://localhost:27017', 'comicclan');
-var User = database.getModel();
-database.connect();
+var errors_1 = __importDefault(require("../errors"));
+var User = database_1.default.getInstance().getModel();
 exports.default = {
     create: function (body) {
         return __awaiter(this, void 0, void 0, function () {
@@ -62,10 +60,15 @@ exports.default = {
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, User.findOne({ email: body.email, active: false }).exec()];
+                    case 0:
+                        body.email = body.email.trim();
+                        return [4 /*yield*/, User.findOne({ email: body.email }).exec()];
                     case 1:
                         findQuery = _a.sent();
                         if (findQuery) {
+                            if (findQuery.active === true) {
+                                throw new errors_1.default('invalid_request', "User \"" + findQuery.email + "\" is already taken", 400);
+                            }
                             findQuery.set({ active: true, password: body.password });
                             return [2 /*return*/, findQuery.save()
                                     .then(function (doc) { return __awaiter(_this, void 0, void 0, function () {
@@ -74,7 +77,13 @@ exports.default = {
                                     });
                                 }); })
                                     .catch(function (err) {
-                                    throw new error_1.default('failed_to_save', err.message, 400);
+                                    if (err.name === 'ValidationError' || err.name === 'ValidatorError') {
+                                        var messages_1 = [];
+                                        Object.keys(err.errors).forEach(function (key) { return messages_1.push(err.errors[key].message); });
+                                        throw new errors_1.default('invalid_request', messages_1.join(' '), 400);
+                                    }
+                                    else
+                                        throw new errors_1.default(err);
                                 })];
                         }
                         else {
@@ -86,7 +95,13 @@ exports.default = {
                                     });
                                 }); })
                                     .catch(function (err) {
-                                    throw new error_1.default('failed_to_save', err.message, 400);
+                                    if (err.name === 'ValidationError' || err.name === 'ValidatorError') {
+                                        var messages_2 = [];
+                                        Object.keys(err.errors).forEach(function (key) { return messages_2.push(err.errors[key].message); });
+                                        throw new errors_1.default('invalid_request', messages_2.join(' '), 400);
+                                    }
+                                    else
+                                        throw new errors_1.default(err);
                                 })];
                         }
                         return [2 /*return*/];
@@ -116,7 +131,7 @@ exports.default = {
                     case 1:
                         queryUser = _a.sent();
                         if (!queryUser) {
-                            throw new error_1.default('not_found', "user with email \"" + body.email + "\" is not registered or it is deleted", 404);
+                            throw new errors_1.default('not_found', "user with email \"" + body.email + "\" is not registered or it is deleted", 404);
                         }
                         return [2 /*return*/, queryUser];
                 }
@@ -125,15 +140,23 @@ exports.default = {
     },
     delete: function (body) {
         return __awaiter(this, void 0, void 0, function () {
-            var queryUser;
+            var queryUser, check;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, User.findOneAndUpdate({ email: body.email, active: true }, { active: false }, { new: true }).exec()];
+                    case 0: return [4 /*yield*/, User.findOne({ email: body.email, active: true }).exec()];
                     case 1:
                         queryUser = _a.sent();
                         if (!queryUser) {
-                            throw new error_1.default('not_found', "user with email \"" + body.email + "\" is not registered or it is deleted", 404);
+                            throw new errors_1.default('not_found', "user with email \"" + body.email + "\" is not registered or it is deleted", 404);
                         }
+                        return [4 /*yield*/, (queryUser === null || queryUser === void 0 ? void 0 : queryUser.compareHash(body.password))];
+                    case 2:
+                        check = _a.sent();
+                        if (!check)
+                            throw new errors_1.default('unauthorized_client', "Password does not match", 401);
+                        return [4 /*yield*/, User.findOneAndUpdate({ email: body.email, active: true }, { active: false }, { new: true }).exec()];
+                    case 3:
+                        _a.sent();
                         return [2 /*return*/, queryUser];
                 }
             });

@@ -40,16 +40,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var events_1 = __importDefault(require("./events"));
-// import * as Bluebird from 'bluebird';
 var controllers_1 = __importDefault(require("./controllers"));
 var dotenv_1 = __importDefault(require("dotenv"));
+var database_1 = __importDefault(require("./database"));
+var logger_1 = __importDefault(require("./utils/logger"));
 dotenv_1.default.config();
-// declare global { export interface Promise<T> extends Bluebird<T> {} }
 var run = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var eventHandler;
+    var logger, eventHandler, db;
     return __generator(this, function (_a) {
-        eventHandler = new events_1.default('redis://localhost:6379/', 'user_ch');
-        eventHandler.listen('users_ch');
+        logger = logger_1.default.getInstance().getLogger();
+        eventHandler = events_1.default.getInstance();
+        eventHandler.connect(process.env.REDIS_SERVER || 'redis://localhost:6379/', 'users_ch');
+        db = database_1.default.getInstance();
+        db.connect(process.env.MONGO_SERVER || 'mongodb://localhost:27017');
         eventHandler.on('list', function (e, reply) { return __awaiter(void 0, void 0, void 0, function () {
             var doc, e_1;
             return __generator(this, function (_a) {
@@ -154,6 +157,7 @@ var run = function () { return __awaiter(void 0, void 0, void 0, function () {
                 }
             });
         }); });
+        logger.warn('Process instantited in environment ', process.env.NODE_ENV);
         return [2 /*return*/];
     });
 }); };

@@ -116,7 +116,7 @@
         display: flex;
     }
 
-    input[type=text]{
+    input[type=text], input[type=password]{
         flex: 1;
         margin-left: 5px;
         border: none;
@@ -156,22 +156,22 @@
             </footer>
         </div>
         <div id="right">
-            <form>
+            <form method="POST">
                 <h2 id="title">Login</h2>
 
                 <div class="input-container">
                     <img src="./user.svg" />
-                    <input type="text" placeholder="Username" />
+                    <input type="text" placeholder="Username" name="username" />
                 </div>
                 <div class="input-container">
                     <img src="./key.svg" />
-                    <input type="text" placeholder="Password" />
+                    <input type="password" placeholder="Password" name="password" />
                 </div>
 
                 <input type="submit"/>
                 <div id="link" style="align-self: flex-end;">
                     <img src="./help-circle.svg" />
-                    <a href="./v3/api-docs">Problems to log in?</a>
+                    <a href="/v3/api-docs">Problems to log in?</a>
                 </div>
             </form>
         </div>

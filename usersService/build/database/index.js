@@ -41,26 +41,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var mongoose_1 = __importDefault(require("mongoose"));
 var usersSchema_1 = __importDefault(require("../models/usersSchema"));
+var logger_1 = require("../utils/logger");
 var Database = /** @class */ (function () {
-    function Database(connectionString, databaseName) {
-        if (databaseName === void 0) { databaseName = 'comicclan'; }
-        this.UserModel = usersSchema_1.default;
-        this.connectionString = connectionString + '/' + databaseName;
+    function Database() {
     }
-    Database.prototype.connect = function () {
+    Database.getInstance = function () {
+        if (!Database.instance) {
+            Database.instance = new Database();
+        }
+        return Database.instance;
+    };
+    Database.prototype.connect = function (connectionString) {
         return __awaiter(this, void 0, void 0, function () {
-            var count, t;
+            var conn, count, t;
             var _this = this;
             return __generator(this, function (_a) {
+                conn = connectionString + '/' + process.env.NODE_ENV;
                 count = 0;
-                console.log('Trying to connect to database...');
+                logger_1.logger.info('Trying to connect to database...');
                 t = setInterval(function () { return __awaiter(_this, void 0, void 0, function () {
                     var e_1;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
                                 _a.trys.push([0, 2, , 3]);
-                                return [4 /*yield*/, mongoose_1.default.connect(this.connectionString, {
+                                return [4 /*yield*/, mongoose_1.default.connect(conn, {
                                         useCreateIndex: true,
                                         useFindAndModify: false,
                                         useNewUrlParser: true,
@@ -73,7 +78,7 @@ var Database = /** @class */ (function () {
                             case 2:
                                 e_1 = _a.sent();
                                 if (count >= 30) {
-                                    console.error('Failed to connect to database!');
+                                    console.error('Failed!');
                                     clearInterval(t);
                                     process.exit(1);
                                 }
@@ -85,6 +90,7 @@ var Database = /** @class */ (function () {
                         }
                     });
                 }); }, 1000);
+                mongoose_1.default.connection.once('connected', function () { return logger_1.logger.info('Database connected!'); });
                 return [2 /*return*/];
             });
         });

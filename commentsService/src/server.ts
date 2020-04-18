@@ -2,13 +2,14 @@ import EventHandler from './events';
 import controller from './controllers';
 import dotenv from 'dotenv';
 import Database from './database';
+import { logger } from './utils/logger'
 
 dotenv.config();
 
 const run = async () => {
 
   const database = Database.getInstance()
-  database.connect(process.env.MONGO_SERVER || 'mongodb://localhost:27017', 'comments');
+  database.connect(process.env.MONGO_SERVER || 'mongodb://localhost:27017');
 
   const eventHandler = EventHandler.getInstance();
   eventHandler.connect(process.env.REDIS_SERVER ?? '', 'comments_ch');
@@ -70,6 +71,8 @@ const run = async () => {
       else reply({error: 'failed_to_comment', error_description: e.message, status: 500});
     }
   });
+
+  logger.warn("Process instantiated in environment " + process.env.NODE_ENV);
 }
 
 run().catch(console.error);

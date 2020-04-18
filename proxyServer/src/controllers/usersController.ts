@@ -59,9 +59,17 @@ router.get('/:email', authHandler, (req, res, next) => {
 
 // Post a new user
 router.post('/', (req, res, next) => {
-    if(!req.headers?.authorization || !req.headers.authorization.startsWith("Basic ")){
-        throw new HTTPError('invalid_request', 'Basic authentication must be provided', 400)
-    }
+    if(!req.headers?.authorization || !req.headers.authorization.startsWith("Basic "))
+        throw new HTTPError('invalid_request', 'Missing "Authorization" header', 400)
+
+    if(!req.body.email || req.body.email === '')
+        throw new HTTPError('invalid_request', 'Missing "email" field', 400);
+
+    if(!req.body.name || req.body.name === '')
+        throw new HTTPError('invalid_request', 'Missing "name" field', 400);
+
+    if(!req.body.password || req.body.password === '')
+        throw new HTTPError('invalid_request', 'Missing "password" field', 400);
 
     eventHandler.publish('auth_ch', {
         body: {
@@ -101,7 +109,7 @@ router.post('/', (req, res, next) => {
         .catch(e => {
             eventHandler.publish('auth_ch', {
                 body: {
-                    email: req.body.email,
+                    email: req.body.email || '',
                 },
                 event: 'removeuser'
             })
@@ -140,10 +148,10 @@ router.delete('/', authHandler,  (req, res, next) => {
         throw new HTTPError('invalid_request', 'Requests to delete user must be X-WWW-FORM-URLENCODED', 400);
 
     if(!req.body.password)
-        throw new HTTPError('invalid_request', 'Missing password field', 400);
+        throw new HTTPError('invalid_request', 'Missing "password" field', 400);
 
     eventHandler.publish('users_ch', {
-    body: {email : req.user.username, password: req.body.password},
+    body: {email : req.user.email, password: req.body.password},
     event: 'delete',
     })
     .then(reply => {
@@ -154,7 +162,7 @@ router.delete('/', authHandler,  (req, res, next) => {
             event: 'removeuser'
         })
 
-        const {_id, name, email, password, createdAt, updatedAt} = reply.payload;
+        const {_id, name, email, createdAt, updatedAt} = reply.payload;
 
         const response : IUserDTO = {
             _id,

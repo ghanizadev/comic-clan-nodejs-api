@@ -1,3 +1,5 @@
+import { logger } from "../utils/logger";
+
 export default class HTTPError extends Error {
     public error : string = 'internal_server_error';
     // tslint:disable-next-line: variable-name
@@ -6,9 +8,10 @@ export default class HTTPError extends Error {
     private level : string = 'error';
 
     // tslint:disable-next-line: variable-name
-    constructor(error : string, error_description ?: string, status ?: number){
+    constructor(error : string | any, error_description ?: string, status ?: number){
         super(error);
-        this.error = error;
+
+        this.error = error || error.name || error.message;
         if(error_description) this.error_description = error_description;
         if(status) this.status = status;
 
@@ -16,6 +19,6 @@ export default class HTTPError extends Error {
         else if(this.status < 500) this.level = 'warn';
         else this.level = 'error'
 
-        console.log(this.level,`(${status}) ERROR: "${error}", ERROR_DESCRIPTION: "${error_description}"`);
+        logger.log(this.level,`(${status}) ERROR: "${error}", ERROR_DESCRIPTION: "${error_description}"`);
     }
 }

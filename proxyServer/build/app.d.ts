@@ -1,4 +1,2 @@
-/// <reference types="node" />
-import * as http from 'http';
-declare const server: http.Server;
-export default server;
+declare const app: import("express-serve-static-core").Express;
+export default app;
