@@ -11,9 +11,9 @@ var adminController_1 = __importDefault(require("../controllers/adminController"
 var authHandler_1 = __importDefault(require("../middlewares/authHandler"));
 var router = express_1.default.Router();
 router.use('/users', usersController_1.default);
-router.use('/posts', authHandler_1.default, postsController_1.default);
-router.use('/comments', authHandler_1.default, commentsController_1.default);
-router.use('/', adminController_1.default);
+router.use('/posts', authHandler_1.default(['posts']), postsController_1.default);
+router.use('/comments', authHandler_1.default(['comments']), commentsController_1.default);
+router.use('/admin', authHandler_1.default(['administrator']), adminController_1.default);
 // router.use(errorHandler);
 router.all('*', function (req, res, next) {
     return res.status(404).send({ error: 'not_found', error_description: "This endpoint was deleted, moved or it is currently unavailable" });

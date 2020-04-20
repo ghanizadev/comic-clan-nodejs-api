@@ -17,10 +17,12 @@ export default class Logger {
         const { printf, json, timestamp, splat, colorize, prettyPrint } = winston.format;
 
         const ip = () : string => {
-            const interfaces = os.networkInterfaces()
-            const keys = Object.keys(interfaces);
+            // const interfaces = os.networkInterfaces()
+            // const keys = Object.keys(interfaces);
 
-            return interfaces[keys[1]][0].address;
+            // return interfaces[keys[1]][0].address;
+
+            return '';
         }
 
         const consoleFormat = printf((data) => {

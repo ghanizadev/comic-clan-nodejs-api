@@ -1,0 +1,40 @@
+{
+    "security": {
+        "jwt": {
+            "expiring_time": 3600
+        },
+        "password": {
+            "regex": "/^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z])(?=.*[0-9]))|((?=.*[A-Z])(?=.*[0-9])))(?=.{6,})/g",
+            "salt": 8
+        }
+    },
+    "system":{
+        "clients": [],
+        "administration":{
+            "username": "admin",
+            "passsword": "admin"
+        },
+        "whitelist": ["*"]
+    },
+    "email":{
+        "smtp": "",
+        "port": "",
+        "username": "",
+        "password": "",
+        "tls": false
+    },
+    "fileUploader": {
+        "maxSize": {
+            "*": 5000
+        },
+        "garbageColector":{
+            "interval": 24,
+            "active": true
+        },
+        "allowedMedia":{
+            "formats": ["jpg", "png", "mp4", "gif"]
+        },
+        "maxFilesPerPost": 5,
+        "maxFilesPerComment": 5
+    }
+}

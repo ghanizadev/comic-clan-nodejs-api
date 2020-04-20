@@ -4,6 +4,9 @@ import { logger } from '../utils/logger';
 import { Message } from './Message';
 import { Reply } from './Reply';
 import { HTTPError } from '../errors/HTTPError';
+import fs from 'fs';
+import path from 'path';
+
 
 export default class EventHandler {
     private static instance : EventHandler;
@@ -51,6 +54,16 @@ export default class EventHandler {
 
             this.consumer.on('message', (ch, msg) => {
                 const decoded = JSON.parse(msg);
+
+                if(decoded.event === 'config'){
+                    fs.writeFileSync(
+                        path.resolve(__dirname, '..', 'config', 'config.json'),
+                        JSON.stringify(decoded.body),
+                        'utf-8'
+                    );
+                    logger.info('Configuration file updated.');
+                    return;
+                }
 
                 logger.info(`Message received from "${decoded.from}"`)
 

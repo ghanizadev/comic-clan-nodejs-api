@@ -12,7 +12,7 @@ const router = express.Router();
 const eventHandler = EventHandler.getInstance();
 
 // Get all users
-router.get('/', authHandler, (req, res, next) => {
+router.get('/', authHandler(["profile"]), (req, res, next) => {
     eventHandler.publish('users_ch', {
         body: {},
         event: 'list',
@@ -37,7 +37,7 @@ router.get('/', authHandler, (req, res, next) => {
 })
 
 // Get by ID
-router.get('/:email', authHandler, (req, res, next) => {
+router.get('/:email', authHandler(["profile"]), (req, res, next) => {
     eventHandler.publish('users_ch', {
         body: { email : req.params.email },
         event: 'list',
@@ -127,7 +127,7 @@ router.post('/', (req, res, next) => {
 });
 
 // Alter a user
-router.put('/:email', authHandler,  (req, res, next) => {
+router.put('/:email', authHandler(["profile"]),  (req, res, next) => {
     delete req.body.scopes;
 
     eventHandler.publish('users_ch', {
@@ -152,7 +152,7 @@ router.put('/:email', authHandler,  (req, res, next) => {
 })
 
 // Delete a user
-router.delete('/', authHandler,  (req, res, next) => {
+router.delete('/', authHandler(["profile"]),  (req, res, next) => {
     if(req.headers["content-type"] !== 'application/x-www-form-urlencoded')
         throw new HTTPError('invalid_request', 'Requests to delete user must be X-WWW-FORM-URLENCODED', 400);
 

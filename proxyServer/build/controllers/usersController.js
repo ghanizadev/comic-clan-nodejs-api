@@ -17,7 +17,7 @@ var authHandler_1 = __importDefault(require("../middlewares/authHandler"));
 var router = express.Router();
 var eventHandler = events_1.default.getInstance();
 // Get all users
-router.get('/', authHandler_1.default, function (req, res, next) {
+router.get('/', authHandler_1.default(["post"]), function (req, res, next) {
     eventHandler.publish('users_ch', {
         body: {},
         event: 'list',
@@ -25,11 +25,12 @@ router.get('/', authHandler_1.default, function (req, res, next) {
         .then(function (reply) {
         var response = [];
         reply.payload.forEach(function (item) {
-            var _id = item._id, name = item.name, email = item.email, createdAt = item.createdAt, updatedAt = item.updatedAt;
+            var _id = item._id, name = item.name, email = item.email, scopes = item.scopes, createdAt = item.createdAt, updatedAt = item.updatedAt;
             response.push({
                 _id: _id,
                 name: name,
                 email: email,
+                scopes: scopes,
                 createdAt: createdAt,
                 updatedAt: updatedAt
             });
@@ -39,17 +40,18 @@ router.get('/', authHandler_1.default, function (req, res, next) {
         .catch(next);
 });
 // Get by ID
-router.get('/:email', authHandler_1.default, function (req, res, next) {
+router.get('/:email', authHandler_1.default(["profile"]), function (req, res, next) {
     eventHandler.publish('users_ch', {
         body: { email: req.params.email },
         event: 'list',
     })
         .then(function (reply) {
-        var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, password = _a.password, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
+        var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, scopes = _a.scopes, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
         var response = {
             _id: _id,
             name: name,
             email: email,
+            scopes: scopes,
             createdAt: createdAt,
             updatedAt: updatedAt
         };
@@ -60,6 +62,7 @@ router.get('/:email', authHandler_1.default, function (req, res, next) {
 // Post a new user
 router.post('/', function (req, res, next) {
     var _a;
+    delete req.body.scopes;
     if (!((_a = req.headers) === null || _a === void 0 ? void 0 : _a.authorization) || !req.headers.authorization.startsWith("Basic "))
         throw new errors_1.default('invalid_request', 'Missing "Authorization" header', 400);
     if (!req.body.email || req.body.email === '')
@@ -79,11 +82,13 @@ router.post('/', function (req, res, next) {
             event: 'create',
         })
             .then(function (reply) {
+            var scopes = ['feed', 'post', 'comments', 'profile'];
             var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, password = _a.password, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
             var response = {
                 _id: _id,
                 name: name,
                 email: email,
+                scopes: scopes,
                 createdAt: createdAt,
                 updatedAt: updatedAt
             };
@@ -110,17 +115,19 @@ router.post('/', function (req, res, next) {
         .catch(next);
 });
 // Alter a user
-router.put('/:email', authHandler_1.default, function (req, res, next) {
+router.put('/:email', authHandler_1.default(["profile"]), function (req, res, next) {
+    delete req.body.scopes;
     eventHandler.publish('users_ch', {
         body: { email: req.params.email, content: req.body },
         event: 'modify',
     })
         .then(function (reply) {
-        var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, password = _a.password, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
+        var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, scopes = _a.scopes, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
         var response = {
             _id: _id,
             name: name,
             email: email,
+            scopes: scopes,
             createdAt: createdAt,
             updatedAt: updatedAt
         };
@@ -129,7 +136,7 @@ router.put('/:email', authHandler_1.default, function (req, res, next) {
         .catch(next);
 });
 // Delete a user
-router.delete('/', authHandler_1.default, function (req, res, next) {
+router.delete('/', authHandler_1.default(["profile"]), function (req, res, next) {
     if (req.headers["content-type"] !== 'application/x-www-form-urlencoded')
         throw new errors_1.default('invalid_request', 'Requests to delete user must be X-WWW-FORM-URLENCODED', 400);
     if (!req.body.password)
@@ -145,11 +152,12 @@ router.delete('/', authHandler_1.default, function (req, res, next) {
             },
             event: 'removeuser'
         });
-        var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
+        var _a = reply.payload, _id = _a._id, name = _a.name, email = _a.email, scopes = _a.scopes, createdAt = _a.createdAt, updatedAt = _a.updatedAt;
         var response = {
             _id: _id,
             name: name,
             email: email,
+            scopes: scopes,
             createdAt: createdAt,
             updatedAt: updatedAt
         };

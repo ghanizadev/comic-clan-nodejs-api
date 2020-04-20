@@ -11,7 +11,8 @@ import database from './middlewares/dbInjector';
 import eventHalderInjector from './middlewares/eventHandlerInjector';
 import EventHandler from "./events";
 import Database from './database';
-import {logger} from './utils/logger'
+import {logger} from './utils/logger';
+import bcrypt from 'bcrypt';
 
 dotenv.config();
 
@@ -45,6 +46,19 @@ const run = async () => {
             
             reply({payload: {}, status: 200});
         })
+    })
+
+    eventHandler.on('createadmin', (message, reply) => {
+        try {
+            const {username, password} = message.body;
+            const hash = bcrypt.hashSync(`${username}:${password}`, process.env.PASSWORD_SALT || 8);
+            db.hset('admins',`${username}@${message.body.id}`, hash);
+            reply({payload: {}, status: 200});
+        } catch(e){
+            console.log(e)
+            reply({error: 'invalid_request', error_description: "Check your request body and try again", status: 400});
+        }
+        
     })
     
     eventHandler.on('removeuser', (message) => {

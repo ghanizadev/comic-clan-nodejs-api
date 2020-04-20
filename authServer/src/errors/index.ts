@@ -20,8 +20,6 @@ export default class HTTPError extends Error {
 
         if(this.status < 300) this.level = 'info';
         else if(this.status < 500) this.level = 'warn';
-        else this.level = 'error'
-
-        logger.log(this.level,`(${status}) ERROR: "${error}", ERROR_DESCRIPTION: "${error_description}"`);
+        else this.level = 'error';
     }
 }

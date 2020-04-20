@@ -1,16 +1,39 @@
 'use strict'
 import app from './app';
 import { logger } from './utils/logger';
-import EventHandler from './events';
-import redis from 'redis';
+import EventHandler, { eventHandler } from './events';
+import redis, { RedisClient } from 'redis';
 import uuid from 'uuid/v4';
 import https from 'https';
 import fs from 'fs';
 import path from "path";
+import bcrypt from 'bcrypt';
+import errorHandler from './middlewares/errorHandler';
 
-const run = async () => {
+const createCredentials = async (db : RedisClient) =>
+    new Promise((res, rej) => {
+    logger.warn('Generating temporary client credentials...');
+    const clientID = uuid();
+    const clientSecret = uuid();
+
+    logger.warn(`CLIENT_ID=${clientID}`);
+    logger.warn(`CLIENT_SECRET=${clientSecret}`);
+
+    db.hset('clients', clientID, clientSecret);
+
+    logger.warn('Creating default SU=admin:admin');
+    eventHandler.publish('auth_ch', {
+        body: {username: 'admin', password: 'admin', id : clientID},
+        event: 'createadmin'
+    })
+    .then(res)
+    .catch(rej);
+});
+
+const run = async () => new Promise(async (res, rej) => {
     await EventHandler.getInstance().connect(process.env.REDIS_SERVER || 'redis://localhost:6379', 'proxy_ch');
 
+    // tslint:disable-next-line: variable-name
     const retry_strategy = (options : any) : number | Error => {
         if (options.attempt > 30) {
             logger.warn('Redis server is not responding...');
@@ -26,7 +49,7 @@ const run = async () => {
     db.once('connect', () => {
         logger.info('Checking from credentials...')
 
-        db.hgetall('clients', (error, keys) => {
+        db.hgetall('clients', async (error, keys) => {
             if (error) return;
 
             const auth: { id: string; secret: string; } = {id: '', secret:''};
@@ -36,29 +59,21 @@ const run = async () => {
                 auth.secret = keys[auth.id] || '';
 
                 if(auth.id !== '' && auth.secret !== ''){
-                    logger.warn('Client credentials found in database');
+                    logger.warn('Credentials found in database!');
                     logger.warn(`CLIENT_ID=${auth.id}`);
-                    logger.warn(`CLIENT_SECRET=${auth.secret}`);
+                    logger.warn(`CLIENT_ID=${auth.secret}`);
                 } else {
-                    logger.warn('Generating temporary client credentials...');
-                    const clientID = uuid();
-                    const clientSecret = uuid();
-
-                    logger.warn(`CLIENT_ID=${clientID}`);
-                    logger.warn(`CLIENT_SECRET=${clientSecret}`);
-
-                    db.hset('clients', clientID, clientSecret);
+                    await createCredentials(db)
+                    .then(() => logger.warn('Successfully created'))
+                    .catch(() => logger.error('failed to create ADM user!'))
                 }
             } else {
-                logger.warn('Generating temporary client credentials...');
-                const clientID = uuid();
-                const clientSecret = uuid();
-
-                logger.warn(`CLIENT_ID=${clientID}`);
-                logger.warn(`CLIENT_SECRET=${clientSecret}`);
-
-                db.hset('clients', clientID, clientSecret);
+                await createCredentials(db)
+                    .then(() => logger.warn('Successfully created'))
+                    .catch(() => logger.error('failed to create ADM user!'))
             }
+
+            app.use(errorHandler);
 
             const options = {
                 key: fs.readFileSync(path.resolve(__dirname, 'keys', 'server.pem')),
@@ -71,7 +86,7 @@ const run = async () => {
         });
 
     })
-}
+});
 
 run().catch(logger.warn)
 

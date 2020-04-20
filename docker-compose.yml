@@ -4,12 +4,15 @@ services:
     image: "redis:alpine"
     command: ["redis-server", "--appendonly", "yes"]
     hostname: redis
+    ports: 
+      - "6378:6379"
     networks:
       - redis-net
     volumes:
       - redis-data:/data
     logging:
       driver: none
+
   mongo:
     image: mongo:latest
     hostname: mongo
@@ -107,6 +110,20 @@ services:
     depends_on: 
       - redis
       - mongo
+
+  configs:
+    image: configs:0.0.1
+    build:
+      context: ./configsService
+      args:
+        - ENV=$ENV
+    networks:
+      - redis-net
+    environment:
+      - REDIS_SERVER=redis://redis:6379
+      - NODE_ENV=${ENV}
+    depends_on: 
+      - redis
 
   auth:
     image: auth:0.0.1

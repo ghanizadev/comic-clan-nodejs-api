@@ -41,29 +41,30 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
 var events_1 = __importDefault(require("../events"));
-var path_1 = __importDefault(require("path"));
+var multer_1 = __importDefault(require("multer"));
 var router = express_1.default.Router();
 var eventHandler = events_1.default.getInstance();
+var upload = multer_1.default().fields([
+    { name: 'accessToken', maxCount: 1 },
+    { name: 'refreshToken', maxCount: 1 },
+    { name: 'server', maxCount: 1 },
+]);
 // Get all users
-router.post('/admin-login', function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, username, password;
-    return __generator(this, function (_b) {
-        if (!req.body.username || !req.body.password)
-            return [2 /*return*/, res.redirect('/')];
-        _a = req.body, username = _a.username, password = _a.password;
-        if (username === 'admin' && password === 'admin')
-            return [2 /*return*/, res.redirect('/dashboard?token=xxxxxxxxxx')];
-        else
-            return [2 /*return*/, res.redirect('/')];
+router.post('/', function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        res.send();
         return [2 /*return*/];
     });
 }); });
-router.get('/dashboard', function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+router.get('/', function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
-        if (!req.query.token)
-            return [2 /*return*/, res.redirect('/')];
-        else
-            res.sendFile(path_1.default.resolve(__dirname, '..', '..', 'public', 'admin', 'index.html'));
+        res.send();
+        return [2 /*return*/];
+    });
+}); });
+router.post('/certificates', upload, function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        res.send();
         return [2 /*return*/];
     });
 }); });

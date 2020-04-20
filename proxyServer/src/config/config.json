@@ -1,21 +1,11 @@
 {
     "security": {
         "jwt": {
-            "access_token": {
-                "privateCertificate": "",
-                "publicCertificate": "",
-                "passphrase": ""
-            },
-            "refresh_token": {
-                "privateCertificate": "",
-                "publicCertificate": "",
-                "passphrase": ""
-            },
             "expiring_time": 3600
         },
         "password": {
             "regex": "",
-            "salt": ""
+            "salt": 8
         }
     },
     "system":{
@@ -34,12 +24,7 @@
         "port": "",
         "username": "",
         "password": "",
-        "tls": false,
-        "sendEmail":{
-            "to": "",
-            "subject": "",
-            "body": ""
-        }
+        "tls": false
     },
     "fileUploader": {
         "maxSize": {

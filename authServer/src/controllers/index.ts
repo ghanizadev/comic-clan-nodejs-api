@@ -24,74 +24,121 @@ const refreshKeyPub = fs.readFileSync(path.resolve(__dirname, '..', 'keys', 'pub
 const eventHandler = EventHandler.getInstance();
 
 
-const issueNewToken = async (db : RedisClient, username: string, password: string, issuer : string, scope: string[], next : NextFunction) => {
+const issueNewToken = async (db : RedisClient, username: string, pw: string, issuer : string, scope: string[], next : NextFunction) => {
+    if(scope.includes("admin")){
+        return await new Promise((resolve, reject) => {
+            db.hget('admins', issuer, (error, value) => {
+                if(error) reject(error)
+                if(!value) reject({error: 'invalid_client', error_description: 'SU does not exists or it is deleted', status: 401});
     
-    return await new Promise((res, rej) => {
-        db.hget(username, 'password', (error, value) => {
-            if(error) rej(error)
-            if(!value) rej({error: 'invalid_client', error_description: 'Please check your username and password', status: 401});
-            res(value);
-        });
-    })
-    .then(async value => {
-        const user = await eventHandler.publish('users_ch', {
-            body: {query: { email: username }},
-            event: 'single'
-        });
+                const hash = bcrypt.hashSync(`${username}:${password}`, process.env.PASSWORD_SALT || 8);
 
-        if(!user.payload.email || !user.payload.password)
-            throw new HTTPError('invalid_client', 'Requested user does not exist or it was deleted', 401);
-
-        const {name, _id, email, scopes} = user.payload;
-        
-        let filteredScopes;
-        if(!scope)
-            filteredScopes = scopes;
-        else if(Array.isArray(scope) && (scope.length === 0 || (scope.length === 1 && scope[0] === '*')))
-            filteredScopes = scopes;
-        else filteredScopes = scopes.filter((s : string) => scope.includes(s));
-
-        const hash = await bcrypt.hash(password, process.env.PASSWORD_SALT || 8);
-
-        if(hash === value) {
-            
-            const access_token = jwt.sign({ username: email, id: _id, name, scope: filteredScopes }, {key: accessKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', expiresIn: '1h', issuer })
-            const refresh_token = jwt.sign({ username: email, id: _id, name, scope: filteredScopes }, {key: refreshKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', issuer});
-
-            db.hset(username, 'refreshToken', refresh_token);
-
-            return {
-                token_type: 'bearer',
-                access_token,
-                expires_in: 60 * 60,
-                refresh_token,
-                scopes: filteredScopes
-            }
-        }else {
-            throw new HTTPError('unauthorized_client', 'User does not exists, it had been deleted or username and password does not match', 401);
-        }
-    }).catch(e => {
-        console.log(e)
-        next(e);
+                console.log(hash, value)
+    
+                if(value === hash){
+                    const access_token = jwt.sign({ username, scope: ['admin'] }, {key: accessKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', expiresIn: '1h', issuer });
+                    const refresh_token = jwt.sign({ username, scope: ["admin"] }, {key: refreshKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', issuer});
+    
+                    db.hset(`${issuer}_${username}`, 'refreshToken', refresh_token);
+    
+                    resolve({
+                        token_type: 'bearer',
+                        access_token,
+                        expires_in: 60 * 60,
+                        refresh_token,
+                        scopes: ["admin"]
+                    })
+                } else
+                    next({error: 'unauthorized_client', error_description: 'User does not exists, it had been deleted or username and password does not match', status: 401});
+            })
+        })
+        .then(reply => {return reply})
+        .catch(e => {
+            console.log(e);
+            next(e);
+        })
+    }
+    
+    const user = await eventHandler.publish('users_ch', {
+        body: {query: { email: username }},
+        event: 'single'
     });
+
+    if(!user.payload.email || !user.payload.password)
+        next({error:'invalid_client', error_description:'Requested user does not exist or it was deleted', status: 401});
+
+    const {name, _id, email, scopes, password} = user.payload;
+    
+    let filteredScopes;
+    if(!scope)
+        filteredScopes = scopes;
+    else if(Array.isArray(scope) && (scope.length === 0 || (scope.length === 1 && scope[0] === '*')))
+        filteredScopes = scopes;
+    else filteredScopes = scopes.filter((s : string) => scope.includes(s));
+
+    const hash = await bcrypt.hash(pw, process.env.PASSWORD_SALT || 8);
+
+    if(hash === password) {
+        
+        const access_token = jwt.sign({ username: email, id: _id, name, scope: filteredScopes }, {key: accessKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', expiresIn: '1h', issuer })
+        const refresh_token = jwt.sign({ username: email, id: _id, name, scope: filteredScopes }, {key: refreshKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', issuer});
+
+        db.hset(username, 'refreshToken', refresh_token);
+
+        return {
+            token_type: 'bearer',
+            access_token,
+            expires_in: 60 * 60,
+            refresh_token,
+            scopes: filteredScopes
+        }
+    }else
+        next({error: 'unauthorized_client', error_description: 'User does not exists, it had been deleted or username and password does not match', status: 401});
+
 }
 
 const issueFromRefreshToken = async (db : RedisClient, token: string, scope : string[], next : NextFunction ) => {
-
     let payload : any = {};
 
     return await new Promise((res : (v : string) => void, rej : (e : any) => void ) => {
 
-        payload = jwt.verify(token, refreshKeyPub, {algorithms: ['RS256', 'RS512']})
+        payload = jwt.verify(token, refreshKeyPub, {algorithms: ['RS256', 'RS512']});
 
-        db.hget(payload.username || '', 'refreshToken', (error: any, value: string) => {
-            if(error) rej(error)
-            if(!value) rej({error: 'invalid_client', error_description: 'This token was issued already. If this problem persists, please, call administrator', status: 401});
-            res(value);
-        });
+        if(scope.includes("admin"))
+            db.hget('admins', payload.issuer, (error, value) => {
+                if(error) rej(error)
+                if(!value) rej({error: 'invalid_client', error_description: 'SU does not exists or it is deleted', status: 401});
+    
+                res(value);
+            })
+        else
+            db.hget(payload.username || '', 'refreshToken', (error: any, value: string) => {
+                if(error) rej(error)
+                if(!value) rej({error: 'invalid_client', error_description: 'This token was issued already. If this problem persists, please, call administrator', status: 401});
+                res(value);
+            });
     })
     .then(async value => {
-        if(value === token) {
+        if(payload.scope.includes('admin')){
+            return await new Promise((resolve, reject) => {
+                const hash = bcrypt.hashSync(`${payload.username}:${payload.password}`, 8);
+    
+                if(value === hash){
+                    const access_token = jwt.sign({ username: payload.username, scope: ['admin'] }, {key: accessKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', expiresIn: '1h', issuer: payload.issuer });
+                    const refresh_token = jwt.sign({ username: payload.username, scope: ["admin"] }, {key: refreshKey, passphrase: 'tr4df2g5wp'}, { algorithm: 'RS256', issuer: payload.issuer});
+    
+                    db.hset(`${payload.issuer}_${payload.username}`, 'refreshToken', refresh_token);
+    
+                    resolve({
+                        token_type: 'bearer',
+                        access_token,
+                        expires_in: 60 * 60,
+                        refresh_token,
+                        scopes: ["admin"]
+                    })
+                }
+            });
+        } else if(value === token) {
             const user = await eventHandler.publish('users_ch', {
                 body: {query: { email: payload.username }},
                 event: 'single'
@@ -128,7 +175,7 @@ const issueFromRefreshToken = async (db : RedisClient, token: string, scope : st
             throw new HTTPError('invalid_request', "Refresh token does not match", 400);
         }
     }).catch(e => {
-        console.log(e)
+        console.log(e);
         next(e);
     });
 }
